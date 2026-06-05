@@ -9,6 +9,7 @@ from app.question.repository.question_repository import QuestionRepository
 from app.question.schema.request.question_request import CreateQuestionRequest, UpdateQuestionRequest
 from app.question.schema.response.question_response import GetQuestionResponse
 from app.users.repository.users_repository import UsersRepository
+from app.vote.repository.vote_repository import VoteRepository
 
 
 async def create_question(request: CreateQuestionRequest, db: AsyncSession) -> None:
@@ -81,6 +82,20 @@ async def update_question(question_seq: int, request: UpdateQuestionRequest, db:
         raise BadRequestException("질문에 속하지 않는 선택지입니다.")
 
     delete_option_seqs = existing_options_by_seq.keys() - update_option_seqs
+    change_option_seqs = {
+        option.options_seq
+        for option in update_option_requests
+        if existing_options_by_seq[option.options_seq].content != option.content
+    }
+    if await VoteRepository.exists_active_by_question_seq_and_options_seqs(db, question_seq, change_option_seqs):
+        raise BadRequestException("이미 투표가 존재하는 선택지는 수정할 수 없습니다.")
+
+    delete_votes = await VoteRepository.find_all_by_question_seq_and_options_seqs(
+        db=db,
+        question_seq=question_seq,
+        options_seqs=delete_option_seqs,
+    )
+
     response_options = []
 
     try:
@@ -98,6 +113,9 @@ async def update_question(question_seq: int, request: UpdateQuestionRequest, db:
 
         for options_seq in delete_option_seqs:
             existing_options_by_seq[options_seq].deactivate()
+
+        for vote in delete_votes:
+            vote.deactivate()
 
         if insert_options:
             await OptionsRepository.save_all(db, insert_options)
@@ -120,12 +138,16 @@ async def delete_question(question_seq: int, db: AsyncSession) -> None:
         raise NotFoundException("존재하지 않는 질문입니다.")
 
     options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
+    votes = await VoteRepository.find_all_by_question_seq(db, question_seq)
 
     try:
         question.deactivate()
 
         for option in options:
             option.deactivate()
+
+        for vote in votes:
+            vote.deactivate()
 
         await db.commit()
     except Exception as e:

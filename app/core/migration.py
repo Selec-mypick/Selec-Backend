@@ -6,6 +6,7 @@ from config import settings
 from app.users.models import users
 from app.question.models import question
 from app.options.models import options
+from app.vote.models import vote
 
 
 class AutoMigration:
