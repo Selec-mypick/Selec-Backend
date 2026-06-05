@@ -53,6 +53,21 @@ class VoteRepository:
         return result.scalar()
 
     @staticmethod
+    async def find_by_users_seq_and_question_seq(
+            db: AsyncSession,
+            users_seq: int,
+            question_seq: int,
+    ) -> Vote | None:
+        result = await db.execute(
+            select(Vote).where(
+                Vote.users_seq == users_seq,
+                Vote.question_seq == question_seq,
+                Vote.active.is_(True),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def find_all_by_question_seq(db: AsyncSession, question_seq: int) -> list[Vote]:
         result = await db.execute(
             select(Vote).where(

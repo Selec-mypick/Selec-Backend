@@ -21,10 +21,17 @@ class GetQuestionResponse(BaseModel):
     version: int
     created_at: datetime
     updated_at: datetime
+    voted_options_seq: int | None = None
     options: list[GetOptionResponse]
 
     @classmethod
-    def from_entity(cls, question: "Question", options: list["Options"]) -> "GetQuestionResponse":
+    def from_entity(
+            cls,
+            question: "Question",
+            options: list["Options"],
+            voted_options_seq: int | None = None,
+            vote_counts: dict[int, int] | None = None,
+    ) -> "GetQuestionResponse":
         return cls(
             question_seq=question.question_seq,
             user_seq=question.user_seq,
@@ -36,8 +43,13 @@ class GetQuestionResponse(BaseModel):
             version=question.version,
             created_at=question.created_at,
             updated_at=question.updated_at,
+            voted_options_seq=voted_options_seq,
             options=[
-                GetOptionResponse.from_entity(option)
+                GetOptionResponse.from_entity(
+                    option,
+                    vote_count=vote_counts.get(option.options_seq) if vote_counts else None,
+                    is_selected=option.options_seq == voted_options_seq if voted_options_seq is not None else None,
+                )
                 for option in options
             ],
         )

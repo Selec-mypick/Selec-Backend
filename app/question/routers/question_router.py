@@ -46,17 +46,21 @@ async def create_question_endpoint(
 )
 async def get_question_endpoint(
         question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        jwt_users: JwtUsers = Depends(get_jwt_users),
         db: AsyncSession = Depends(get_db),
 ):
     """
     질문 단건 조회
 
+    본인이 해당 질문에 투표한 경우 `voted_options_seq`, 각 선택지의 `vote_count`, `is_selected`가 함께 반환됩니다.
+
     **Response**
     - `200`: 조회 성공
+    - `401`: 인증 실패
     - `404`: 존재하지 않는 질문
     - `500`: 서버 오류
     """
-    result = await get_question(question_seq, db)
+    result = await get_question(question_seq, jwt_users.users_seq, db)
     return BaseResponse.of(status.HTTP_200_OK, "SUCCESS", result)
 
 
