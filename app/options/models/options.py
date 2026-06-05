@@ -14,9 +14,6 @@ class Options(BaseTimeEntity):
     content = Column(String(1024), nullable=False)
     active = Column(Boolean, nullable=False, default=True)
 
-    version = Column(Integer, nullable=False, default=0)
-    __mapper_args__ = {"version_id_col": version}
-
     vote = relationship("Question")
 
 
