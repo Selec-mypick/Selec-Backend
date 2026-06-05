@@ -6,8 +6,8 @@ from app.base.openapi_responses import VOTE_RESPONSES
 from app.core.connection_config import get_db
 from app.users.dependency.jwt_users import get_jwt_users
 from app.users.schema.jwt_users import JwtUsers
-from app.vote.schema.request.vote_request import CreateVoteRequest
-from app.vote.service.vote_service import create_vote
+from app.vote.schema.request.vote_request import CreateVoteRequest, DeleteVoteRequest
+from app.vote.service.vote_service import create_vote, delete_vote
 
 router = APIRouter(prefix="/api/vote", tags=["VOTE"])
 
@@ -37,3 +37,29 @@ async def create_vote_endpoint(
     """
     await create_vote(request, jwt_users.users_seq, db)
     return BaseResponse.of_success(status.HTTP_201_CREATED, "SUCCESS")
+
+
+@router.delete(
+    "",
+    response_model=BaseResponse[dict],
+    status_code=status.HTTP_200_OK,
+    responses=VOTE_RESPONSES,
+)
+async def delete_vote_endpoint(
+        request: DeleteVoteRequest,
+        jwt_users: JwtUsers = Depends(get_jwt_users),
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    투표 취소
+
+    JWT 토큰으로 인증된 사용자의 해당 질문 투표를 소프트 삭제합니다.
+
+    **Response**
+    - `200`: 투표 취소 성공
+    - `401`: 인증 실패
+    - `404`: 투표 내역 없음
+    - `500`: 서버 오류
+    """
+    await delete_vote(request, jwt_users.users_seq, db)
+    return BaseResponse.of_success(status.HTTP_200_OK, "SUCCESS")

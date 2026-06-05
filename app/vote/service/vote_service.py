@@ -4,7 +4,7 @@ from app.core.exception import BadRequestException, NotFoundException, ServerExc
 from app.options.repository.options_repository import OptionsRepository
 from app.question.repository.question_repository import QuestionRepository
 from app.vote.repository.vote_repository import VoteRepository
-from app.vote.schema.request.vote_request import CreateVoteRequest
+from app.vote.schema.request.vote_request import CreateVoteRequest, DeleteVoteRequest
 
 
 async def create_vote(request: CreateVoteRequest, users_seq: int, db: AsyncSession) -> None:
@@ -30,3 +30,16 @@ async def create_vote(request: CreateVoteRequest, users_seq: int, db: AsyncSessi
     except Exception as e:
         await db.rollback()
         raise ServerException(f"투표 저장 중 오류가 발생했습니다: {str(e)}")
+
+
+async def delete_vote(request: DeleteVoteRequest, users_seq: int, db: AsyncSession) -> None:
+    vote = await VoteRepository.find_by_users_seq_and_question_seq(db, users_seq, request.question_seq)
+    if vote is None:
+        raise NotFoundException("투표 내역이 없습니다.")
+
+    try:
+        vote.deactivate()
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise ServerException(f"투표 취소 중 오류가 발생했습니다: {str(e)}")
