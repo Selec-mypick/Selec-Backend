@@ -79,39 +79,11 @@ class Settings:
         return int(db)
     
     @property
-    def solapi_api_key(self) -> str:
-        api_key = self.get_env('SOLAPI_API_KEY')
-        if not api_key:
-            raise ValueError(f"SOLAPI_API_KEY이 설정되지 않았습니다. ({self.active_profile} 환경)")
-        return api_key
-    
-    @property
-    def solapi_api_secret(self) -> str:
-        api_secret = self.get_env('SOLAPI_API_SECRET')
-        if not api_secret:
-            raise ValueError(f"SOLAPI_API_SECRET이 설정되지 않았습니다. ({self.active_profile} 환경)")
-        return api_secret
-    
-    @property
-    def solapi_from_number(self) -> str:
-        from_number = self.get_env('SOLAPI_FROM_NUMBER')
-        if not from_number:
-            raise ValueError(f"SOLAPI_FROM_NUMBER이 설정되지 않았습니다. ({self.active_profile} 환경)")
-        return from_number
-    
-    @property
     def google_client_id(self) -> str:
         client_id = self.get_env('GOOGLE_CLIENT_ID')
         if not client_id:
             raise ValueError(f"GOOGLE_CLIENT_ID이 설정되지 않았습니다. ({self.active_profile} 환경)")
         return client_id
-
-    @property
-    def google_client_secret(self) -> str:
-        client_secret = self.get_env('GOOGLE_CLIENT_SECRET')
-        if not client_secret:
-            raise ValueError(f"GOOGLE_CLIENT_SECRET이 설정되지 않았습니다. ({self.active_profile} 환경)")
-        return client_secret
 
     @property
     def cors_origins(self) -> list[str]:
@@ -120,47 +92,7 @@ class Settings:
         if origins_str == '*':
             return ['*']
         return [origin.strip() for origin in origins_str.split(',') if origin.strip()]
-    
-    @property
-    def smtp_host(self) -> str:
-        host = self.get_env('SMTP_HOST')
-        if not host:
-            raise ValueError(f"SMTP_HOST이 설정되지 않았습니다. ({self.active_profile} 환경)")
-        return host
-    
-    @property
-    def smtp_port(self) -> int:
-        port = self.get_env('SMTP_PORT')
-        if not port:
-            raise ValueError(f"SMTP_PORT이 설정되지 않았습니다. ({self.active_profile} 환경)")
-        return int(port)
-    
-    @property
-    def smtp_user(self) -> str:
-        user = self.get_env('SMTP_USER')
-        if not user:
-            raise ValueError(f"SMTP_USER이 설정되지 않았습니다. ({self.active_profile} 환경)")
-        return user
-    
-    @property
-    def smtp_password(self) -> str:
-        password = self.get_env('SMTP_PASSWORD')
-        if not password:
-            raise ValueError(f"SMTP_PASSWORD이 설정되지 않았습니다. ({self.active_profile} 환경)")
-        return password
-    
-    @property
-    def smtp_from_email(self) -> str:
-        from_email = self.get_env('SMTP_FROM_EMAIL')
-        if not from_email:
-            raise ValueError(f"SMTP_FROM_EMAIL이 설정되지 않았습니다. ({self.active_profile} 환경)")
-        return from_email
-    
-    @property
-    def smtp_use_tls(self) -> bool:
-        use_tls = self.get_env('SMTP_USE_TLS', 'True')
-        return use_tls.lower() in ('true', '1', 'yes')
-    
+
     def get_env(self, key: str, default: Optional[str] = None) -> Optional[str]:
         return os.getenv(key, default)
     

@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 class JwtUsers(BaseModel):
     users_seq: int
+    nick_name: str | None
     active: bool
     created_at: datetime
     updated_at: datetime
@@ -17,6 +18,7 @@ class JwtUsers(BaseModel):
     def from_entity(cls, users: "Users") -> "JwtUsers":
         return cls(
             users_seq=users.users_seq,
+            nick_name=users.nick_name,
             active=users.active,
             created_at=users.created_at,
             updated_at=users.updated_at,

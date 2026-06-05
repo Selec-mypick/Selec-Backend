@@ -6,4 +6,3 @@ class AuthTokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "Bearer"
     expires_in: int
-    users_seq: int

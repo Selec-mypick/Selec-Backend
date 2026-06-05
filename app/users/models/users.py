@@ -7,7 +7,8 @@ class Users(BaseTimeEntity):
     __tablename__ = 'users'
 
     users_seq = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    google_id = Column(String(128), unique=True, nullable=True, index=True)
+    google_id = Column(String(128), unique=True, nullable=False, index=True)
+    nick_name = Column(String(20), unique=True, nullable=True, index=True)
     email = Column(String(256), nullable=True)
     name = Column(String(128), nullable=True)
     profile_image = Column(String(2048), nullable=True)

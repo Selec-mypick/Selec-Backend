@@ -8,8 +8,9 @@ from app.auth.routers.auth_router import router as auth_router
 from app.question.routers.question_router import router as question_router
 from app.vote.routers.vote_router import router as vote_router
 from app.core.migration import auto_update_schema
-from app.base.base_response import BaseResponse
 from app.core.redis_config import RedisClient
+from app.base.base_response import BaseResponse
+from app.base.openapi_responses import ERROR_500
 
 
 def create_app() -> FastAPI:
@@ -46,7 +47,12 @@ def create_app() -> FastAPI:
     app.include_router(question_router)
     app.include_router(vote_router)
 
-    @app.get("/actuator/health", response_model=BaseResponse[dict], status_code=status.HTTP_200_OK)
+    @app.get(
+        "/actuator/health",
+        response_model=BaseResponse[dict],
+        status_code=status.HTTP_200_OK,
+        responses={500: ERROR_500},
+    )
     async def health_check():
         health_data = {"status": "healthy", "environment": settings.active_profile}
         return BaseResponse.of_success(status.HTTP_200_OK, health_data)
