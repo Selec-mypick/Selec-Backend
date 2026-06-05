@@ -112,3 +112,22 @@ async def update_question(question_seq: int, request: UpdateQuestionRequest, db:
         raise ServerException(f"질문 수정 중 오류가 발생했습니다: {str(e)}")
 
     return GetQuestionResponse.from_entity(question, response_options)
+
+
+async def delete_question(question_seq: int, db: AsyncSession) -> None:
+    question = await QuestionRepository.find_by_question_seq(db, question_seq)
+    if question is None:
+        raise NotFoundException("존재하지 않는 질문입니다.")
+
+    options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
+
+    try:
+        question.deactivate()
+
+        for option in options:
+            option.deactivate()
+
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise ServerException(f"질문 삭제 중 오류가 발생했습니다: {str(e)}")

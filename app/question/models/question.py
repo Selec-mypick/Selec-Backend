@@ -26,3 +26,7 @@ class Question(BaseTimeEntity):
         self.is_multiple = is_multiple
         self.is_anonymous = is_anonymous
         self.updated_at = now()
+
+    def deactivate(self) -> None:
+        self.active = False
+        self.updated_at = now()
