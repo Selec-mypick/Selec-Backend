@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from app.core.exception import setup_exception_handlers
 from app.core.jwt_filter import JWTAuthMiddleware
+from app.auth.routers.auth_router import router as auth_router
 from app.question.routers.question_router import router as question_router
 from app.vote.routers.vote_router import router as vote_router
 from app.core.migration import auto_update_schema
@@ -36,12 +37,12 @@ def create_app() -> FastAPI:
     app.add_middleware(
         JWTAuthMiddleware,
         allow_paths=(
-            "/**",
-            # "/auth/**",
-            # "/actuator/health",
+            "/auth/**",
+            "/actuator/**",
         ),
     )
 
+    app.include_router(auth_router)
     app.include_router(question_router)
     app.include_router(vote_router)
 

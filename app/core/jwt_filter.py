@@ -11,6 +11,11 @@ class JWTAuthMiddleware:
     def __init__(self, app, allow_paths: Iterable[str] | None = None) -> None:
         self.app = app
         self.allow_paths = set(allow_paths or [])
+        self.allow_prefixes = tuple(
+            allowed_path[:-3]
+            for allowed_path in self.allow_paths
+            if allowed_path.endswith("/**")
+        )
 
     async def __call__(self, scope, receive, send):
         if scope.get("type") != "http":
@@ -18,20 +23,15 @@ class JWTAuthMiddleware:
             return
 
         path = scope.get("path", "")
-        # allow_paths에 있는 경로 또는 특정 경로로 시작하는 경우 통과
         if path in self.allow_paths:
             await self.app(scope, receive, send)
             return
 
-        # 와일드카드 패턴 처리: /auth/** 또는 /sms/** 같은 패턴
-        for allowed_path in self.allow_paths:
-            if allowed_path.endswith("/**"):
-                prefix = allowed_path[:-3]  # /** 제거
-                if path.startswith(prefix):
-                    await self.app(scope, receive, send)
-                    return
+        for prefix in self.allow_prefixes:
+            if path.startswith(prefix):
+                await self.app(scope, receive, send)
+                return
 
-        # 기본 허용 경로들
         if (path.startswith("/docs") or
             path.startswith("/openapi") or
             path.startswith("/auth") or
@@ -39,8 +39,12 @@ class JWTAuthMiddleware:
             await self.app(scope, receive, send)
             return
 
-        headers = dict((k.decode().lower(), v.decode()) for k, v in scope.get("headers", []))
-        auth_header = headers.get("authorization")
+        auth_header = None
+        for key, value in scope.get("headers", []):
+            if key.decode().lower() == "authorization":
+                auth_header = value.decode()
+                break
+
         if not auth_header:
             resp = JSONResponse(status_code=401, content={"status": 401, "message": "Authorization 헤더가 필요합니다.", "data": None})
             await resp(scope, receive, send)
@@ -51,7 +55,7 @@ class JWTAuthMiddleware:
             await resp(scope, receive, send)
             return
 
-        token = auth_header.split(" ", 1)[1].strip()
+        token = auth_header[7:].strip()
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             users_seq = payload.get("users_seq") or payload.get("sub")
@@ -63,7 +67,9 @@ class JWTAuthMiddleware:
             try:
                 redis_client = await RedisClient.get_client()
                 white_key = f"auth:white:{users_seq}"
-                whitelisted_token = await redis_client.get(white_key)
+                black_key = f"auth:black:{users_seq}"
+                whitelisted_token, blacklisted_token = await redis_client.mget(white_key, black_key)
+
                 if whitelisted_token is None:
                     resp = JSONResponse(status_code=401, content={"status": 401, "message": "토큰이 whitelist에 등록되어 있지 않습니다. 로그인이 필요합니다.", "data": None})
                     await resp(scope, receive, send)
@@ -72,21 +78,14 @@ class JWTAuthMiddleware:
                     resp = JSONResponse(status_code=401, content={"status": 401, "message": "토큰이 whitelist에 등록된 토큰과 일치하지 않습니다. 토큰이 재발급되었을 수 있습니다.", "data": None})
                     await resp(scope, receive, send)
                     return
-            except Exception as e:
-                resp = JSONResponse(status_code=401, content={"status": 401, "message": f"토큰 whitelist 확인 중 오류가 발생했습니다: {str(e)}", "data": None})
-                await resp(scope, receive, send)
-                return
-
-            try:
-                redis_client = await RedisClient.get_client()
-                black_key = f"auth:black:{users_seq}"
-                blacklisted_token = await redis_client.get(black_key)
                 if blacklisted_token == token:
                     resp = JSONResponse(status_code=401, content={"status": 401, "message": "이미 무효화된 토큰입니다. 토큰이 재발급되어 이전 토큰은 사용할 수 없습니다.", "data": None})
                     await resp(scope, receive, send)
                     return
-            except Exception:
-                pass
+            except Exception as e:
+                resp = JSONResponse(status_code=401, content={"status": 401, "message": f"토큰 whitelist 확인 중 오류가 발생했습니다: {str(e)}", "data": None})
+                await resp(scope, receive, send)
+                return
 
             request = Request(scope, receive=receive)
             request.state.users_seq = users_seq
@@ -110,7 +109,7 @@ async def get_user_seq(authorization: str = Header(None), token: str | None = No
         if token is None:
             if not authorization or not authorization.startswith("Bearer "):
                 raise UnauthorizedException("Authorization 헤더 누락 또는 형식 오류")
-            token = authorization.split(" ", 1)[1].strip()
+            token = authorization[7:].strip()
 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         users_seq = payload.get("users_seq") or payload.get("sub")

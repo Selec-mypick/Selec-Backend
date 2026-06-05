@@ -5,6 +5,12 @@ from app.users.models.users import Users
 
 
 class UsersRepository:
+    @staticmethod
+    async def save(db: AsyncSession, users: Users) -> Users:
+        db.add(users)
+        await db.flush()
+        await db.refresh(users)
+        return users
 
     @staticmethod
     async def find_by_user_seq(db: AsyncSession, user_seq: int) -> Users | None:
@@ -12,3 +18,44 @@ class UsersRepository:
             select(Users).where(Users.users_seq == user_seq)
         )
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def find_by_google_id(db: AsyncSession, google_id: str) -> Users | None:
+        result = await db.execute(
+            select(Users).where(Users.google_id == google_id)
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def upsert_by_google(
+            db: AsyncSession,
+            google_id: str,
+            email: str | None,
+            name: str | None,
+            profile_image: str | None,
+    ) -> Users:
+        result = await db.execute(
+            select(Users).where(Users.google_id == google_id)
+        )
+        existing_users = result.scalar_one_or_none()
+
+        if existing_users is not None:
+            existing_users.update_google_profile(
+                email=email,
+                name=name,
+                profile_image=profile_image,
+            )
+            await db.flush()
+            await db.refresh(existing_users)
+            return existing_users
+
+        users = Users.create_from_google(
+            google_id=google_id,
+            email=email,
+            name=name,
+            profile_image=profile_image,
+        )
+        db.add(users)
+        await db.flush()
+        await db.refresh(users)
+        return users

@@ -100,6 +100,20 @@ class Settings:
         return from_number
     
     @property
+    def google_client_id(self) -> str:
+        client_id = self.get_env('GOOGLE_CLIENT_ID')
+        if not client_id:
+            raise ValueError(f"GOOGLE_CLIENT_ID이 설정되지 않았습니다. ({self.active_profile} 환경)")
+        return client_id
+
+    @property
+    def google_client_secret(self) -> str:
+        client_secret = self.get_env('GOOGLE_CLIENT_SECRET')
+        if not client_secret:
+            raise ValueError(f"GOOGLE_CLIENT_SECRET이 설정되지 않았습니다. ({self.active_profile} 환경)")
+        return client_secret
+
+    @property
     def cors_origins(self) -> list[str]:
         """CORS 허용 origin 목록. 쉼표로 구분된 문자열을 리스트로 변환"""
         origins_str = self.get_env('CORS_ORIGINS', '*')
