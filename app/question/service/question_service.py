@@ -8,17 +8,12 @@ from app.question.models.question import Question
 from app.question.repository.question_repository import QuestionRepository
 from app.question.schema.request.question_request import CreateQuestionRequest, UpdateQuestionRequest
 from app.question.schema.response.question_response import GetQuestionResponse
-from app.users.repository.users_repository import UsersRepository
 from app.vote.repository.vote_repository import VoteRepository
 
 
-async def create_question(request: CreateQuestionRequest, db: AsyncSession) -> None:
-    users = await UsersRepository.find_by_user_seq(db, request.user_seq)
-    if users is None:
-        raise BadRequestException("존재하지 않는 사용자입니다.")
-
+async def create_question(request: CreateQuestionRequest, user_seq: int, db: AsyncSession) -> None:
     new_question = Question(
-        user_seq=request.user_seq,
+        user_seq=user_seq,
         title=request.title,
         description=request.description or None,
         is_anonymous=request.is_anonymous,

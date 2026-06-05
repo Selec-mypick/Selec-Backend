@@ -54,15 +54,15 @@ class JWTAuthMiddleware:
         token = auth_header.split(" ", 1)[1].strip()
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            sub = payload.get("sub")
-            if not sub:
-                raise JWTError("sub 누락")
+            users_seq = payload.get("users_seq") or payload.get("sub")
+            if not users_seq:
+                raise JWTError("users_seq 누락")
 
-            user_seq = int(sub)
+            users_seq = int(users_seq)
 
             try:
                 redis_client = await RedisClient.get_client()
-                white_key = f"auth:white:{user_seq}"
+                white_key = f"auth:white:{users_seq}"
                 whitelisted_token = await redis_client.get(white_key)
                 if whitelisted_token is None:
                     resp = JSONResponse(status_code=401, content={"status": 401, "message": "토큰이 whitelist에 등록되어 있지 않습니다. 로그인이 필요합니다.", "data": None})
@@ -79,7 +79,7 @@ class JWTAuthMiddleware:
 
             try:
                 redis_client = await RedisClient.get_client()
-                black_key = f"auth:black:{user_seq}"
+                black_key = f"auth:black:{users_seq}"
                 blacklisted_token = await redis_client.get(black_key)
                 if blacklisted_token == token:
                     resp = JSONResponse(status_code=401, content={"status": 401, "message": "이미 무효화된 토큰입니다. 토큰이 재발급되어 이전 토큰은 사용할 수 없습니다.", "data": None})
@@ -89,7 +89,7 @@ class JWTAuthMiddleware:
                 pass
 
             request = Request(scope, receive=receive)
-            request.state.user_seq = user_seq
+            request.state.users_seq = users_seq
             await self.app(scope, receive, send)
         except jwt.ExpiredSignatureError:
             resp = JSONResponse(status_code=401, content={"status": 401, "message": "토큰이 만료되었습니다. 토큰을 재발급해주세요.", "data": None})
@@ -113,9 +113,9 @@ async def get_user_seq(authorization: str = Header(None), token: str | None = No
             token = authorization.split(" ", 1)[1].strip()
 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        sub = payload.get("sub")
-        if not sub:
-            raise UnauthorizedException("토큰에 사용자 정보가 없습니다(sub).")
-        return int(sub)
+        users_seq = payload.get("users_seq") or payload.get("sub")
+        if not users_seq:
+            raise UnauthorizedException("토큰에 사용자 정보가 없습니다(users_seq).")
+        return int(users_seq)
     except Exception as e:
         raise ServerException(f"토큰 파싱 실패: {e}")
