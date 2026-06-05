@@ -14,8 +14,7 @@ class Options(BaseTimeEntity):
     content = Column(String(1024), nullable=False)
     active = Column(Boolean, nullable=False, default=True)
 
-    vote = relationship("Question")
-
+    question = relationship("Question")
 
     @classmethod
     def create(cls, question_seq: int, content: str) -> "Options":

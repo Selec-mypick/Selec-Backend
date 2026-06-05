@@ -72,6 +72,7 @@ async def get_question_endpoint(
 async def update_question_endpoint(
         request: UpdateQuestionRequest,
         question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        jwt_users: JwtUsers = Depends(get_jwt_users),
         db: AsyncSession = Depends(get_db),
 ):
     """
@@ -85,7 +86,7 @@ async def update_question_endpoint(
     - `409`: 버전 충돌 (낙관적 락)
     - `500`: 서버 오류
     """
-    result = await update_question(question_seq, request, db)
+    result = await update_question(question_seq, request, jwt_users.users_seq, db)
     return BaseResponse.of(status.HTTP_200_OK, "SUCCESS", result)
 
 
@@ -96,6 +97,7 @@ async def update_question_endpoint(
 )
 async def delete_question_endpoint(
         question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        jwt_users: JwtUsers = Depends(get_jwt_users),
         db: AsyncSession = Depends(get_db),
 ):
     """
@@ -106,5 +108,5 @@ async def delete_question_endpoint(
     - `404`: 존재하지 않는 질문
     - `500`: 서버 오류
     """
-    await delete_question(question_seq, db)
+    await delete_question(question_seq, jwt_users.users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK, "SUCCESS")

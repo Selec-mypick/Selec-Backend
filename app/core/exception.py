@@ -72,6 +72,16 @@ class UnauthorizedException(BaseAPIException):
         )
 
 
+class ForbiddenException(BaseAPIException):
+    def __init__(self, message: str = "접근 권한이 없습니다.", details: Optional[dict] = None):
+        super().__init__(
+            status_code=403,
+            custom_code="FORBIDDEN",
+            message=message,
+            details=details
+        )
+
+
 def setup_exception_handlers(app):
     @app.exception_handler(BaseAPIException)
     async def base_api_exception_handler(request: Request, exc: BaseAPIException):

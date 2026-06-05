@@ -1,6 +1,7 @@
-from sqlalchemy import exists, select
+from sqlalchemy import exists, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.timezone import now
 from app.vote.models.vote import Vote
 
 
@@ -53,6 +54,24 @@ class VoteRepository:
         return result.scalar()
 
     @staticmethod
+    async def count_by_question_seq_group_by_options_seq(db: AsyncSession, question_seq: int) -> dict[int, int]:
+        result = await db.execute(
+            select(
+                Vote.options_seq,
+                func.count(Vote.vote_seq),
+            )
+            .where(
+                Vote.question_seq == question_seq,
+                Vote.active.is_(True),
+            )
+            .group_by(Vote.options_seq)
+        )
+        return {
+            options_seq: count
+            for options_seq, count in result.all()
+        }
+
+    @staticmethod
     async def find_by_users_seq_and_question_seq(
             db: AsyncSession,
             users_seq: int,
@@ -68,29 +87,39 @@ class VoteRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def find_all_by_question_seq(db: AsyncSession, question_seq: int) -> list[Vote]:
+    async def deactivate_by_question_seq(db: AsyncSession, question_seq: int) -> int:
         result = await db.execute(
-            select(Vote).where(
+            update(Vote)
+            .where(
                 Vote.question_seq == question_seq,
                 Vote.active.is_(True),
             )
+            .values(
+                active=False,
+                updated_at=now(),
+            )
         )
-        return result.scalars().all()
+        return result.rowcount
 
     @staticmethod
-    async def find_all_by_question_seq_and_options_seqs(
+    async def deactivate_by_question_seq_and_options_seqs(
             db: AsyncSession,
             question_seq: int,
             options_seqs: set[int],
-    ) -> list[Vote]:
+    ) -> int:
         if not options_seqs:
-            return []
+            return 0
 
         result = await db.execute(
-            select(Vote).where(
+            update(Vote)
+            .where(
                 Vote.question_seq == question_seq,
                 Vote.options_seq.in_(options_seqs),
                 Vote.active.is_(True),
             )
+            .values(
+                active=False,
+                updated_at=now(),
+            )
         )
-        return result.scalars().all()
+        return result.rowcount

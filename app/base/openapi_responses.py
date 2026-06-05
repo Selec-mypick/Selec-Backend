@@ -25,6 +25,7 @@ def _error(status: int, message: str, description: str) -> dict:
 
 ERROR_400 = _error(400, "잘못된 요청입니다.", "Bad Request")
 ERROR_401 = _error(401, "인증이 필요합니다.", "Unauthorized")
+ERROR_403 = _error(403, "접근 권한이 없습니다.", "Forbidden")
 ERROR_404 = _error(404, "리소스를 찾을 수 없습니다.", "Not Found")
 ERROR_409 = _error(409, "리소스 충돌이 발생했습니다.", "Conflict")
 ERROR_422 = _error(422, "요청 값이 올바르지 않습니다.", "Validation Error")
@@ -45,6 +46,7 @@ REFRESH_TOKEN_RESPONSES = {
 AUTHENTICATED_RESPONSES = {
     400: ERROR_400,
     401: ERROR_401,
+    403: ERROR_403,
     422: ERROR_422,
     500: ERROR_500,
 }

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base.base_response import BaseResponse
@@ -6,7 +6,7 @@ from app.base.openapi_responses import VOTE_RESPONSES
 from app.core.connection_config import get_db
 from app.users.dependency.jwt_users import get_jwt_users
 from app.users.schema.jwt_users import JwtUsers
-from app.vote.schema.request.vote_request import CreateVoteRequest, DeleteVoteRequest
+from app.vote.schema.request.vote_request import CreateVoteRequest
 from app.vote.service.vote_service import create_vote, delete_vote
 
 router = APIRouter(prefix="/api/vote", tags=["VOTE"])
@@ -40,13 +40,13 @@ async def create_vote_endpoint(
 
 
 @router.delete(
-    "",
+    "/{question_seq}",
     response_model=BaseResponse[dict],
     status_code=status.HTTP_200_OK,
     responses=VOTE_RESPONSES,
 )
 async def delete_vote_endpoint(
-        request: DeleteVoteRequest,
+        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
         jwt_users: JwtUsers = Depends(get_jwt_users),
         db: AsyncSession = Depends(get_db),
 ):
@@ -61,5 +61,5 @@ async def delete_vote_endpoint(
     - `404`: 투표 내역 없음
     - `500`: 서버 오류
     """
-    await delete_vote(request, jwt_users.users_seq, db)
+    await delete_vote(question_seq, jwt_users.users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK, "SUCCESS")

@@ -27,17 +27,3 @@ class RedisClient:
         if cls._instance:
             await cls._instance.close()
             cls._instance = None
-
-    @classmethod
-    async def ping(cls) -> bool:
-        try:
-            client = await cls.get_client()
-            await client.ping()
-            return True
-        except Exception:
-            return False
-
-
-async def get_redis() -> redis.Redis:
-    return await RedisClient.get_client()
-

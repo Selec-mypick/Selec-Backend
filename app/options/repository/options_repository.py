@@ -1,6 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.timezone import now
 from app.options.models.options import Options
 
 
@@ -24,3 +25,41 @@ class OptionsRepository:
             )
         )
         return result.scalars().all()
+
+    @staticmethod
+    async def deactivate_by_question_seq(db: AsyncSession, question_seq: int) -> int:
+        result = await db.execute(
+            update(Options)
+            .where(
+                Options.question_seq == question_seq,
+                Options.active.is_(True),
+            )
+            .values(
+                active=False,
+                updated_at=now(),
+            )
+        )
+        return result.rowcount
+
+    @staticmethod
+    async def deactivate_by_options_seqs(
+            db: AsyncSession,
+            question_seq: int,
+            options_seqs: set[int],
+    ) -> int:
+        if not options_seqs:
+            return 0
+
+        result = await db.execute(
+            update(Options)
+            .where(
+                Options.question_seq == question_seq,
+                Options.options_seq.in_(options_seqs),
+                Options.active.is_(True),
+            )
+            .values(
+                active=False,
+                updated_at=now(),
+            )
+        )
+        return result.rowcount
