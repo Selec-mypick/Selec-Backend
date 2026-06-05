@@ -14,7 +14,19 @@ class Options(BaseTimeEntity):
     content = Column(String(1024), nullable=False)
     active = Column(Boolean, nullable=False, default=True)
 
+    version = Column(Integer, nullable=False, default=0)
+    __mapper_args__ = {"version_id_col": version}
+
     vote = relationship("Question")
+
+
+    @classmethod
+    def create(cls, question_seq: int, content: str) -> "Options":
+        return cls(
+            question_seq=question_seq,
+            content=content,
+            active=True,
+        )
 
     def update_content(self, content: str) -> None:
         self.content = content

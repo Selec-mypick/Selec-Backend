@@ -17,6 +17,9 @@ class Question(BaseTimeEntity):
     status = Column(String(20), nullable=False, default='OPEN')
     active = Column(Boolean, nullable=False, default=True)
 
+    version = Column(Integer, nullable=False, default=0)
+    __mapper_args__ = {"version_id_col": version}
+
     def update(self, title: str, description: str | None, is_multiple: bool, is_anonymous: bool) -> None:
         self.title = title
         self.description = description or None

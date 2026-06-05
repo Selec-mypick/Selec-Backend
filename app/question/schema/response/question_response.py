@@ -19,6 +19,7 @@ class GetQuestionResponse(BaseModel):
     is_anonymous: bool
     status: str
     active: bool
+    version: int
     created_at: datetime
     updated_at: datetime
     options: list[GetOptionResponse]
@@ -34,6 +35,7 @@ class GetQuestionResponse(BaseModel):
             is_anonymous=question.is_anonymous,
             status=question.status,
             active=question.active,
+            version=question.version,
             created_at=question.created_at,
             updated_at=question.updated_at,
             options=[

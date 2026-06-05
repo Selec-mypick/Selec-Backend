@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.exc import StaleDataError
 
-from app.core.exception import ServerException, BadRequestException, NotFoundException
+from app.core.exception import ServerException, BadRequestException, NotFoundException, ConflictException
 from app.options.models.options import Options
 from app.options.repository.options_repository import OptionsRepository
 from app.question.models.question import Question
@@ -28,11 +29,7 @@ async def create_question(request: CreateQuestionRequest, db: AsyncSession) -> N
     try:
         saved_question = await QuestionRepository.save(db, new_question)
         options = [
-            Options(
-                question_seq=saved_question.question_seq,
-                content=option,
-                active=True,
-            )
+            Options.create(saved_question.question_seq, option)
             for option in request.options
         ]
         await OptionsRepository.save_all(db, options)
@@ -56,6 +53,8 @@ async def update_question(question_seq: int, request: UpdateQuestionRequest, db:
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
         raise NotFoundException("존재하지 않는 질문입니다.")
+    if question.version != request.version:
+        raise ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
 
     existing_options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
     existing_options_by_seq = {
@@ -63,51 +62,53 @@ async def update_question(question_seq: int, request: UpdateQuestionRequest, db:
         for option in existing_options
     }
 
-    requested_option_seqs = set()
-    new_options = []
+    update_option_requests = []
+    insert_options = []
+    update_option_seqs = set()
 
-    question.update(
-        title=request.title,
-        description=request.description,
-        is_multiple=request.is_multiple,
-        is_anonymous=request.is_anonymous,
-    )
+    for option in request.options:
+        if option.options_seq is None:
+            insert_options.append(Options.create(question_seq, option.content))
+            continue
+
+        if option.options_seq in update_option_seqs:
+            raise BadRequestException("중복된 선택지 시퀀스가 포함되어 있습니다.")
+
+        update_option_seqs.add(option.options_seq)
+        update_option_requests.append(option)
+
+    if not update_option_seqs.issubset(existing_options_by_seq):
+        raise BadRequestException("질문에 속하지 않는 선택지입니다.")
+
+    delete_option_seqs = existing_options_by_seq.keys() - update_option_seqs
+    response_options = []
 
     try:
-        for option_request in request.options:
-            if option_request.options_seq is None:
-                new_options.append(
-                    Options(
-                        question_seq=question_seq,
-                        content=option_request.content,
-                        active=True,
-                    )
-                )
-                continue
+        question.update(
+            title=request.title,
+            description=request.description,
+            is_multiple=request.is_multiple,
+            is_anonymous=request.is_anonymous,
+        )
 
-            if option_request.options_seq in requested_option_seqs:
-                raise BadRequestException("중복된 선택지 시퀀스가 포함되어 있습니다.")
-
-            option = existing_options_by_seq.get(option_request.options_seq)
-            if option is None:
-                raise BadRequestException("질문에 속하지 않는 선택지입니다.")
-
-            requested_option_seqs.add(option_request.options_seq)
+        for option_request in update_option_requests:
+            option = existing_options_by_seq[option_request.options_seq]
             option.update_content(option_request.content)
+            response_options.append(option)
 
-        for option in existing_options:
-            if option.options_seq not in requested_option_seqs:
-                option.deactivate()
+        for options_seq in delete_option_seqs:
+            existing_options_by_seq[options_seq].deactivate()
 
-        if new_options:
-            await OptionsRepository.save_all(db, new_options)
+        if insert_options:
+            await OptionsRepository.save_all(db, insert_options)
+            response_options.extend(insert_options)
 
         await db.commit()
-    except BadRequestException:
+    except StaleDataError:
         await db.rollback()
-        raise
+        raise ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
     except Exception as e:
         await db.rollback()
         raise ServerException(f"질문 수정 중 오류가 발생했습니다: {str(e)}")
 
-    return await get_question(question_seq, db)
+    return GetQuestionResponse.from_entity(question, response_options)
