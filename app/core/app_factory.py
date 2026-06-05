@@ -5,6 +5,7 @@ from config import settings
 from app.core.exception import setup_exception_handlers
 from app.core.jwt_filter import JWTAuthMiddleware
 from app.question.routers.question_router import router as question_router
+from app.vote.routers.vote_router import router as vote_router
 from app.core.migration import auto_update_schema
 from app.base.base_response import BaseResponse
 from app.core.redis_config import RedisClient
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(question_router)
+    app.include_router(vote_router)
 
     @app.get("/actuator/health", response_model=BaseResponse[dict], status_code=status.HTTP_200_OK)
     async def health_check():

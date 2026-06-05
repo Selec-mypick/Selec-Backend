@@ -15,7 +15,6 @@ class GetQuestionResponse(BaseModel):
     user_seq: int
     title: str
     description: str | None
-    is_multiple: bool
     is_anonymous: bool
     status: str
     active: bool
@@ -31,7 +30,6 @@ class GetQuestionResponse(BaseModel):
             user_seq=question.user_seq,
             title=question.title,
             description=question.description,
-            is_multiple=question.is_multiple,
             is_anonymous=question.is_anonymous,
             status=question.status,
             active=question.active,

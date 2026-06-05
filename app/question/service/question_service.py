@@ -21,7 +21,6 @@ async def create_question(request: CreateQuestionRequest, db: AsyncSession) -> N
         user_seq=request.user_seq,
         title=request.title,
         description=request.description or None,
-        is_multiple=request.is_multiple,
         is_anonymous=request.is_anonymous,
         status='OPEN',
         active=True
@@ -56,6 +55,8 @@ async def update_question(question_seq: int, request: UpdateQuestionRequest, db:
         raise NotFoundException("존재하지 않는 질문입니다.")
     if question.version != request.version:
         raise ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
+    if question.status != 'OPEN':
+        raise BadRequestException("이미 종료된 투표입니다.")
 
     existing_options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
     existing_options_by_seq = {
@@ -102,7 +103,6 @@ async def update_question(question_seq: int, request: UpdateQuestionRequest, db:
         question.update(
             title=request.title,
             description=request.description,
-            is_multiple=request.is_multiple,
             is_anonymous=request.is_anonymous,
         )
 

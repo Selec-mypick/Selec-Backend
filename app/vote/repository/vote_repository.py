@@ -6,6 +6,33 @@ from app.vote.models.vote import Vote
 
 class VoteRepository:
     @staticmethod
+    async def upsert(
+            db: AsyncSession,
+            users_seq: int,
+            question_seq: int,
+            options_seq: int,
+    ) -> Vote:
+        result = await db.execute(
+            select(Vote).where(
+                Vote.users_seq == users_seq,
+                Vote.question_seq == question_seq,
+            )
+        )
+        existing_vote = result.scalar_one_or_none()
+
+        if existing_vote is not None:
+            existing_vote.update_option(options_seq)
+            await db.flush()
+            await db.refresh(existing_vote)
+            return existing_vote
+
+        vote = Vote.create(users_seq, question_seq, options_seq)
+        db.add(vote)
+        await db.flush()
+        await db.refresh(vote)
+        return vote
+
+    @staticmethod
     async def exists_active_by_question_seq_and_options_seqs(
             db: AsyncSession,
             question_seq: int,
