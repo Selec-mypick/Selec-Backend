@@ -8,6 +8,7 @@ DATABASE_URL = settings.database_url
 engine = create_async_engine(
     DATABASE_URL,
     echo=True,
+    connect_args={"init_command": f"SET time_zone = '{settings.database_time_zone}'"},
     pool_recycle=3600,
     pool_pre_ping=True,
     pool_size=10,

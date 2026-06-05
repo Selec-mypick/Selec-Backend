@@ -2,6 +2,11 @@ from sqlalchemy import text
 from app.core.connection_config import engine, Base
 from config import settings
 
+# Import model modules so SQLAlchemy registers every table on Base.metadata.
+from app.users.models import users
+from app.question.models import question
+from app.options.models import options
+
 
 class AutoMigration:
     def __init__(self):

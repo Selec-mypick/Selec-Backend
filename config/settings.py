@@ -46,6 +46,14 @@ class Settings:
     @property
     def log_level(self) -> str:
         return os.getenv('LOG_LEVEL', 'INFO')
+
+    @property
+    def timezone(self) -> str:
+        return self.get_env('TIMEZONE', 'Asia/Seoul')
+
+    @property
+    def database_time_zone(self) -> str:
+        return self.get_env('DATABASE_TIME_ZONE', '+09:00')
     
     @property
     def redis_host(self) -> str:
