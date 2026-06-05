@@ -11,9 +11,9 @@ from app.question.schema.response.question_response import GetQuestionResponse
 from app.vote.repository.vote_repository import VoteRepository
 
 
-async def create_question(request: CreateQuestionRequest, user_seq: int, db: AsyncSession) -> None:
+async def create_question(request: CreateQuestionRequest, users_seq: int, db: AsyncSession) -> None:
     new_question = Question(
-        user_seq=user_seq,
+        users_seq=users_seq,
         title=request.title,
         description=request.description or None,
         is_anonymous=request.is_anonymous,
@@ -34,13 +34,13 @@ async def create_question(request: CreateQuestionRequest, user_seq: int, db: Asy
         raise ServerException(f"질문 생성 중 오류가 발생했습니다: {str(e)}")
 
 
-async def get_question(question_seq: int, user_seq: int, db: AsyncSession) -> GetQuestionResponse:
+async def get_question(question_seq: int, users_seq: int, db: AsyncSession) -> GetQuestionResponse:
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
         raise NotFoundException("존재하지 않는 질문입니다.")
 
     options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
-    user_vote = await VoteRepository.find_by_users_seq_and_question_seq(db, user_seq, question_seq)
+    user_vote = await VoteRepository.find_by_users_seq_and_question_seq(db, users_seq, question_seq)
 
     voted_options_seq = None
     vote_counts = None

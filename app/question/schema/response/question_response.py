@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class GetQuestionResponse(BaseModel):
     question_seq: int
-    user_seq: int
+    users_seq: int
     title: str
     description: str | None
     is_anonymous: bool
@@ -34,7 +34,7 @@ class GetQuestionResponse(BaseModel):
     ) -> "GetQuestionResponse":
         return cls(
             question_seq=question.question_seq,
-            user_seq=question.user_seq,
+            users_seq=question.users_seq,
             title=question.title,
             description=question.description,
             is_anonymous=question.is_anonymous,

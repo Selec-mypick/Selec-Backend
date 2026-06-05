@@ -89,7 +89,7 @@ async def refresh_access_token(request: RefreshTokenRequest, db: AsyncSession) -
     if not users_seq:
         raise UnauthorizedException("refresh token에 사용자 정보가 없습니다.")
 
-    users = await UsersRepository.find_by_user_seq(db, int(users_seq))
+    users = await UsersRepository.find_by_users_seq(db, int(users_seq))
     if users is None:
         raise UnauthorizedException("존재하지 않는 사용자입니다.")
     if not users.active:

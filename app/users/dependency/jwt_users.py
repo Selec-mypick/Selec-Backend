@@ -12,7 +12,7 @@ async def get_jwt_users(request: Request, db: AsyncSession = Depends(get_db)) ->
     if users_seq is None:
         raise UnauthorizedException("인증된 사용자 정보가 없습니다.")
 
-    users = await UsersRepository.find_by_user_seq(db, users_seq)
+    users = await UsersRepository.find_by_users_seq(db, users_seq)
     if users is None:
         raise UnauthorizedException("존재하지 않는 사용자입니다.")
     if not users.active:
