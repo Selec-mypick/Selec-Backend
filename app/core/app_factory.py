@@ -38,7 +38,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         JWTAuthMiddleware,
         allow_paths=(
-            "/auth/**",
+            "/api/auth/**",
             "/actuator/**",
         ),
     )

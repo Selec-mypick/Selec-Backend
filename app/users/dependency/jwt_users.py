@@ -7,10 +7,7 @@ from app.users.repository.users_repository import UsersRepository
 from app.users.schema.jwt_users import JwtUsers
 
 
-async def get_jwt_users(
-        request: Request,
-        db: AsyncSession = Depends(get_db),
-) -> JwtUsers:
+async def get_jwt_users(request: Request, db: AsyncSession = Depends(get_db)) -> JwtUsers:
     users_seq = getattr(request.state, "users_seq", None)
     if users_seq is None:
         raise UnauthorizedException("인증된 사용자 정보가 없습니다.")
