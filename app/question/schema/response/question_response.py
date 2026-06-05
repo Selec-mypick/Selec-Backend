@@ -1,8 +1,13 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
 from app.options.schema.response.options_response import GetOptionResponse
+
+if TYPE_CHECKING:
+    from app.options.models.options import Options
+    from app.question.models.question import Question
 
 
 class GetQuestionResponse(BaseModel):
@@ -17,3 +22,22 @@ class GetQuestionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     options: list[GetOptionResponse]
+
+    @classmethod
+    def from_entity(cls, question: "Question", options: list["Options"]) -> "GetQuestionResponse":
+        return cls(
+            question_seq=question.question_seq,
+            user_seq=question.user_seq,
+            title=question.title,
+            description=question.description,
+            is_multiple=question.is_multiple,
+            is_anonymous=question.is_anonymous,
+            status=question.status,
+            active=question.active,
+            created_at=question.created_at,
+            updated_at=question.updated_at,
+            options=[
+                GetOptionResponse.from_entity(option)
+                for option in options
+            ],
+        )

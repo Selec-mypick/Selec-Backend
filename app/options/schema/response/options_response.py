@@ -1,6 +1,10 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from app.options.models.options import Options
 
 
 class GetOptionResponse(BaseModel):
@@ -10,3 +14,14 @@ class GetOptionResponse(BaseModel):
     active: bool
     created_at: datetime
     updated_at: datetime
+
+    @classmethod
+    def from_entity(cls, option: "Options") -> "GetOptionResponse":
+        return cls(
+            options_seq=option.options_seq,
+            question_seq=option.question_seq,
+            content=option.content,
+            active=option.active,
+            created_at=option.created_at,
+            updated_at=option.updated_at,
+        )

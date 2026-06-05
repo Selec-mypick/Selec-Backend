@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 
+from app.core.timezone import now
 from app.base.base_time_entity import BaseTimeEntity
 
 
@@ -15,3 +16,10 @@ class Question(BaseTimeEntity):
     is_anonymous = Column(Boolean, nullable=False, default=False)
     status = Column(String(20), nullable=False, default='OPEN')
     active = Column(Boolean, nullable=False, default=True)
+
+    def update(self, title: str, description: str | None, is_multiple: bool, is_anonymous: bool) -> None:
+        self.title = title
+        self.description = description or None
+        self.is_multiple = is_multiple
+        self.is_anonymous = is_anonymous
+        self.updated_at = now()
