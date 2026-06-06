@@ -37,18 +37,15 @@ LOG_RECORD_RESERVED_KEYS = {
 
 
 class JsonLogFormatter(logging.Formatter):
-    def __init__(self, service_name: str, active_profile: str) -> None:
-        super().__init__()
-        self.service_name = service_name
-        self.active_profile = active_profile
-
     def format(self, record: LogRecord) -> str:
         log_data: dict[str, Any] = {
             "@timestamp": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
-            "service": self.service_name,
-            "env": self.active_profile,
-            "message": record.getMessage(),
+            "level": record.levelname,
         }
+
+        message = record.getMessage()
+        if message:
+            log_data["message"] = message
 
         request_id = request_id_context.get()
         if request_id:
@@ -64,9 +61,9 @@ class JsonLogFormatter(logging.Formatter):
         return json.dumps(log_data, ensure_ascii=False, default=str)
 
 
-def setup_logging(log_level: str, active_profile: str, service_name: str = "selec-backend") -> None:
+def setup_logging(log_level: str) -> None:
     handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(JsonLogFormatter(service_name, active_profile))
+    handler.setFormatter(JsonLogFormatter())
 
     root_logger = logging.getLogger()
     root_logger.handlers.clear()

@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
-    setup_logging(settings.log_level, settings.active_profile)
+    setup_logging(settings.log_level)
 
     auth_header = APIKeyHeader(name="Authorization", auto_error=False)
 

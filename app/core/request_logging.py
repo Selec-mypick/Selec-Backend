@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -55,7 +54,6 @@ class RequestLoggingMiddleware:
         request_headers = Headers(scope=scope)
         request_id = request_headers.get("X-Request-ID") or str(uuid4())
         token = request_id_context.set(request_id)
-        start_time = time.perf_counter()
 
         request_body: list[bytes] = []
         response_body: list[bytes] = []
@@ -138,26 +136,23 @@ class RequestLoggingMiddleware:
                     response_body_truncated,
                 ),
             }
-            duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
             if response_status_code >= 500:
                 logger.error(
-                    "request failed",
+                    "",
                     extra={
                         "request_id": request_id,
                         "request": request,
                         "response": response,
-                        "duration_ms": duration_ms,
                     },
                 )
             else:
                 logger.info(
-                    "request completed",
+                    "",
                     extra={
                         "request_id": request_id,
                         "request": request,
                         "response": response,
-                        "duration_ms": duration_ms,
                     },
                 )
             request_id_context.reset(token)
