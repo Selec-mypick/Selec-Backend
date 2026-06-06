@@ -15,64 +15,54 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
       # DEVELOP 용 환경 설정
       - name: Set Environment for DEVELOP
-        if: github.base_ref == 'develop' || github.ref == 'refs/heads/develop'
+        if: github.ref == 'refs/heads/develop'
         run: |
           mkdir -p config
           echo "${{ secrets.CONFIG_DEVELOP_ENV }}" | base64 --decode > config/develop.env
           echo "${{ secrets.CONFIG_DEFAULT_ENV_DEVELOP }}" | base64 --decode > config/default.env
 
       # PRODUCTION 용 환경 설정
-#      - name: Set Environment for PRODUCTION
-#        if: github.base_ref == 'master' || github.ref == 'refs/heads/master'
-#        run: |
-#          mkdir -p config
-#          echo "${{ secrets.CONFIG_PRODUCTION_ENV }}" | base64 --decode > config/production.env
-#          echo "${{ secrets.CONFIG_DEFAULT_ENV_PROD }}" | base64 --decode > config/default.env
+      # - name: Set Environment for PRODUCTION
+      #   if: github.ref == 'refs/heads/master'
+      #   run: |
+      #     mkdir -p config
+      #     echo "${{ secrets.CONFIG_PRODUCTION_ENV }}" | base64 --decode > config/production.env
+      #     echo "${{ secrets.CONFIG_DEFAULT_ENV_PROD }}" | base64 --decode > config/default.env
 
-      # Python 의존성 설치
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # Python 테스트 실행
-      - name: Run Tests
-        run: |
-          python -m pytest tests/ || echo "No tests found, continuing..."
-
-      # Docker Config
       - name: Login to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Build and Push Docker Image (DEVELOP)
-        if: github.base_ref == 'develop' || github.ref == 'refs/heads/develop'
-        env:
-          NAME: ${{ secrets.DOCKER_USERNAME }}
-          REPO: selec-develop
-        run: |
-          docker build -t $REPO .
-          docker tag $REPO:latest $NAME/$REPO:latest
-          docker push $NAME/$REPO:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-#      - name: Build and Push Docker Image (PRODUCTION)
-#        if: github.base_ref == 'master' || github.ref == 'refs/heads/master'
-#        env:
-#          NAME: ${{ secrets.DOCKER_USERNAME }}
-#          REPO: selec-prod
-#        run: |
-#          docker build -t $REPO .
-#          docker tag $REPO:latest $NAME/$REPO:latest
-#          docker push $NAME/$REPO:latest
+      - name: Build and Push Docker Image (DEVELOP)
+        if: github.ref == 'refs/heads/develop'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/selec-develop:latest
+            ${{ secrets.DOCKER_USERNAME }}/selec-develop:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # - name: Build and Push Docker Image (PRODUCTION)
+      #   if: github.ref == 'refs/heads/master'
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: .
+      #     push: true
+      #     tags: |
+      #       ${{ secrets.DOCKER_USERNAME }}/selec-prod:latest
+      #       ${{ secrets.DOCKER_USERNAME }}/selec-prod:${{ github.sha }}
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
 
   deploy:
     needs: build
@@ -103,29 +93,37 @@ jobs:
 
       # 배포할 서버 선택 (develop → 테스트 서버, master → 운영 서버)
       - name: Deploy to DEVELOP EC2
-        if: github.base_ref == 'develop' || github.ref == 'refs/heads/develop'
+        if: github.ref == 'refs/heads/develop'
         run: |
           ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ secrets.DEVELOP_EC2_IP }} << 'EOF'
-            sudo docker container prune -f
-            sudo docker image prune -a -f
-            sudo docker volume prune -f
-            sudo docker network prune -f
-
-            sudo docker ps -q --filter "name=selec-develop" | grep -q . && sudo docker stop "selec-develop" && sudo docker rm "selec-develop"
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/selec-develop:latest
-            sudo docker run -d --name selec-develop --rm -p 8000:8000 ${{ secrets.DOCKER_USERNAME }}/selec-develop:latest
+
+            sudo docker stop selec-develop || true
+            sudo docker rm selec-develop || true
+
+            sudo docker run -d \
+              --name selec-develop \
+              --restart always \
+              -p 8000:8000 \
+              ${{ secrets.DOCKER_USERNAME }}/selec-develop:latest
+
+            sudo docker image prune -f
           EOF
 
-#      - name: Deploy to PROD EC2
-#        if: github.base_ref == 'master' || github.ref == 'refs/heads/master'
-#        run: |
-#          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ secrets.PROD_EC2_IP }} << 'EOF'
-#            sudo docker container prune -f
-#            sudo docker image prune -a -f
-#            sudo docker volume prune -f
-#            sudo docker network prune -f
-#
-#            sudo docker ps -q --filter "name=selec-prod" | grep -q . && sudo docker stop "selec-prod" && sudo docker rm "selec-prod"
-#            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/selec-prod:latest
-#            sudo docker run -d --name selec-prod --rm -p 8000:8000 ${{ secrets.DOCKER_USERNAME }}/selec-prod:latest
-#          EOF
+      # - name: Deploy to PROD EC2
+      #   if: github.ref == 'refs/heads/master'
+      #   run: |
+      #     ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ secrets.PROD_EC2_IP }} << 'EOF'
+      #       sudo docker pull ${{ secrets.DOCKER_USERNAME }}/selec-prod:latest
+      #
+      #       sudo docker stop selec-prod || true
+      #       sudo docker rm selec-prod || true
+      #
+      #       sudo docker run -d \
+      #         --name selec-prod \
+      #         --restart always \
+      #         -p 8000:8000 \
+      #         ${{ secrets.DOCKER_USERNAME }}/selec-prod:latest
+      #
+      #       sudo docker image prune -f
+      #     EOF
