@@ -14,6 +14,7 @@ logger = logging.getLogger("app.request")
 BODY_LOG_LIMIT = 4096
 LOGGED_REQUEST_HEADERS = {"user-agent", "content-type"}
 LOGGED_RESPONSE_HEADERS = {"content-type"}
+SYSTEM_PATHS = {"/actuator/health", "/openapi.json", "/docs", "/redoc"}
 
 
 def body_to_log(body: bytes, content_type: Optional[str], truncated: bool = False) -> Any:
@@ -51,6 +52,7 @@ class RequestLoggingMiddleware:
             await self.app(scope, receive, send)
             return
 
+        path = scope["path"]
         request_headers = Headers(scope=scope)
         request_id = request_headers.get("X-Request-ID") or str(uuid4())
         token = request_id_context.set(request_id)
@@ -109,7 +111,7 @@ class RequestLoggingMiddleware:
         finally:
             request = {
                 "method": scope["method"],
-                "path": scope["path"],
+                "path": path,
                 "query": scope["query_string"].decode("utf-8", errors="replace"),
                 "headers": {
                     key: value
@@ -117,7 +119,7 @@ class RequestLoggingMiddleware:
                     if key.lower() in LOGGED_REQUEST_HEADERS
                 },
                 "client_ip": scope["client"][0] if scope.get("client") else None,
-                "body": body_to_log(
+                "body": None if path in SYSTEM_PATHS else body_to_log(
                     b"".join(request_body),
                     request_headers.get("content-type"),
                     request_body_truncated,
@@ -130,7 +132,7 @@ class RequestLoggingMiddleware:
                     for key, value in response_headers.items()
                     if key.lower() in LOGGED_RESPONSE_HEADERS
                 },
-                "body": body_to_log(
+                "body": None if path in SYSTEM_PATHS else body_to_log(
                     b"".join(response_body),
                     response_headers.get("content-type"),
                     response_body_truncated,
