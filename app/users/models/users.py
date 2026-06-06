@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, Boolean, String
 
 from app.base.base_time_entity import BaseTimeEntity
+from app.core.timezone import now
 
 
 class Users(BaseTimeEntity):
@@ -40,3 +41,7 @@ class Users(BaseTimeEntity):
         self.name = name
         self.profile_image = profile_image
         self.active = True
+
+    def update_nick_name(self, nick_name: str) -> None:
+        self.nick_name = nick_name
+        self.updated_at = now()

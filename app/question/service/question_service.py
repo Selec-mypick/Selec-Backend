@@ -35,24 +35,12 @@ async def create_question(request: CreateQuestionRequest, users_seq: int, db: As
 
 
 async def get_question(question_seq: int, users_seq: int, db: AsyncSession) -> GetQuestionResponse:
-    question = await QuestionRepository.find_by_question_seq(db, question_seq)
-    if question is None:
+    question_detail = await QuestionRepository.find_detail_by_question_seq(db, question_seq, users_seq)
+    if question_detail is None:
         raise NotFoundException("존재하지 않는 질문입니다.")
 
-    options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
-    user_vote = await VoteRepository.find_by_users_seq_and_question_seq(db, users_seq, question_seq)
-    vote_counts = await VoteRepository.count_by_question_seq_group_by_options_seq(db, question_seq)
-
-    voted_options_seq = None
-    if user_vote is not None:
-        voted_options_seq = user_vote.options_seq
-
-    return GetQuestionResponse.from_entity(
-        question,
-        options,
-        voted_options_seq=voted_options_seq,
-        vote_counts=vote_counts,
-    )
+    question, option_rows = question_detail
+    return GetQuestionResponse.from_detail_rows(question, option_rows)
 
 
 async def update_question(

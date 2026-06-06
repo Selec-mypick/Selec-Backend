@@ -1,4 +1,5 @@
 from sqlalchemy import exists, func, select, update
+from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.timezone import now
@@ -13,25 +14,30 @@ class VoteRepository:
             question_seq: int,
             options_seq: int,
     ) -> Vote:
+        statement = insert(Vote).values(
+            users_seq=users_seq,
+            question_seq=question_seq,
+            options_seq=options_seq,
+            active=True,
+            created_at=now(),
+            updated_at=now(),
+        )
+        await db.execute(
+            statement.on_duplicate_key_update(
+                options_seq=options_seq,
+                active=True,
+                updated_at=now(),
+            )
+        )
+        await db.flush()
+
         result = await db.execute(
             select(Vote).where(
                 Vote.users_seq == users_seq,
                 Vote.question_seq == question_seq,
             )
         )
-        existing_vote = result.scalar_one_or_none()
-
-        if existing_vote is not None:
-            existing_vote.update_option(options_seq)
-            await db.flush()
-            await db.refresh(existing_vote)
-            return existing_vote
-
-        vote = Vote.create(users_seq, question_seq, options_seq)
-        db.add(vote)
-        await db.flush()
-        await db.refresh(vote)
-        return vote
+        return result.scalar_one()
 
     @staticmethod
     async def exists_active_by_question_seq_and_options_seqs(

@@ -53,3 +53,40 @@ class GetQuestionResponse(BaseModel):
                 for option in options
             ],
         )
+
+    @classmethod
+    def from_detail_rows(
+            cls,
+            question: "Question",
+            option_rows: list[tuple["Options", int, bool]],
+    ) -> "GetQuestionResponse":
+        voted_options_seq = next(
+            (
+                option.options_seq
+                for option, _, is_selected in option_rows
+                if is_selected
+            ),
+            None,
+        )
+
+        return cls(
+            question_seq=question.question_seq,
+            users_seq=question.users_seq,
+            title=question.title,
+            description=question.description,
+            is_anonymous=question.is_anonymous,
+            status=question.status,
+            active=question.active,
+            version=question.version,
+            created_at=question.created_at,
+            updated_at=question.updated_at,
+            voted_options_seq=voted_options_seq,
+            options=[
+                GetOptionResponse.from_entity(
+                    option,
+                    vote_count=vote_count,
+                    is_selected=is_selected,
+                )
+                for option, vote_count, is_selected in option_rows
+            ],
+        )
