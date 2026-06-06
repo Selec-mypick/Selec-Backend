@@ -5,6 +5,7 @@ from app.auth.schema.request.google_oauth_request import GoogleOAuthRequest
 from app.auth.schema.request.refresh_token_request import RefreshTokenRequest
 from app.auth.schema.response.auth_response import AuthTokenResponse
 from app.auth.service.auth_service import authenticate_google, refresh_access_token
+from app.base.constants import BaseUtil
 from app.base.response import BaseResponse
 from app.base.response import AUTH_RESPONSES, REFRESH_TOKEN_RESPONSES
 from app.core.database import get_db
@@ -33,7 +34,7 @@ async def google_oauth_endpoint(
     - `500`: 서버 오류
     """
     result = await authenticate_google(request, db)
-    return BaseResponse.of(status.HTTP_201_CREATED, "SUCCESS", result)
+    return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS, result)
 
 
 @router.post(
@@ -57,4 +58,4 @@ async def refresh_token_endpoint(
     - `500`: 서버 오류
     """
     result = await refresh_access_token(request, db)
-    return BaseResponse.of(status.HTTP_200_OK, "SUCCESS", result)
+    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)

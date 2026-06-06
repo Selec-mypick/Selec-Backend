@@ -1,7 +1,5 @@
-"""Common API response package."""
-
-from app.base.response.base_response import BaseResponse
-from app.base.response.openapi_responses import (
+from app.base.response.api_response import BaseResponse
+from app.base.response.openapi import (
     AUTH_RESPONSES,
     AUTHENTICATED_RESPONSES,
     ERROR_500,

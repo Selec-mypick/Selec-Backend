@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.base.constants import BaseUtil
 from app.base.response import BaseResponse
 from app.base.response import VOTE_RESPONSES
 from app.core.database import get_db
@@ -36,7 +37,7 @@ async def create_vote_endpoint(
     - `500`: 서버 오류
     """
     await create_vote(request, jwt_users.users_seq, db)
-    return BaseResponse.of_success(status.HTTP_201_CREATED, "SUCCESS")
+    return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS)
 
 
 @router.delete(
@@ -62,4 +63,4 @@ async def delete_vote_endpoint(
     - `500`: 서버 오류
     """
     await delete_vote(question_seq, jwt_users.users_seq, db)
-    return BaseResponse.of_success(status.HTTP_200_OK, "SUCCESS")
+    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS)

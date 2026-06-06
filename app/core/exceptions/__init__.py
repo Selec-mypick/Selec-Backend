@@ -1,5 +1,3 @@
-"""Application exception package."""
-
 from app.core.exceptions.api_exception import (
     BadRequestException,
     BaseAPIException,
