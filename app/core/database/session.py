@@ -10,7 +10,6 @@ engine = create_async_engine(
     echo=False,
     connect_args={"init_command": f"SET time_zone = '{settings.database_time_zone}'"},
     pool_recycle=3600,
-    pool_pre_ping=True,
     pool_size=10,
     max_overflow=20
 )
