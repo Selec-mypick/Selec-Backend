@@ -1,3 +1,3 @@
-class BaseUtil:
+class BaseMessage:
     SUCCESS = "SUCCESS"
     FAIL = "FAIL"

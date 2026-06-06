@@ -1,6 +1,6 @@
 from typing import Generic, TypeVar, Optional
 from pydantic import BaseModel
-from .base_util import BaseUtil
+from app.base.constants import BaseMessage
 
 T = TypeVar('T')
 
@@ -11,7 +11,7 @@ class BaseResponse(BaseModel, Generic[T]):
 
     @classmethod
     def of_success(cls, status: int, data: T) -> "BaseResponse[T]":
-        return cls(status=status, message=BaseUtil.SUCCESS, data=data)
+        return cls(status=status, message=BaseMessage.SUCCESS, data=data)
     
     @classmethod
     def of_fail(cls, status: int, message: str) -> "BaseResponse[T]":

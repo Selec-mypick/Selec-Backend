@@ -1,7 +1,7 @@
 import redis.asyncio as redis
 from typing import Optional
 from config import settings
-from app.core.exception import ServerException
+from app.core.exceptions import ServerException
 
 
 class RedisClient:

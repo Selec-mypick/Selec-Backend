@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 
-from app.core.timezone import now
-from app.base.base_time_entity import BaseTimeEntity
+from app.core.utils import now
+from app.base.entity import BaseTimeEntity
 
 
 class Question(BaseTimeEntity):

@@ -5,9 +5,9 @@ from app.auth.schema.request.google_oauth_request import GoogleOAuthRequest
 from app.auth.schema.request.refresh_token_request import RefreshTokenRequest
 from app.auth.schema.response.auth_response import AuthTokenResponse
 from app.auth.service.auth_service import authenticate_google, refresh_access_token
-from app.base.base_response import BaseResponse
-from app.base.openapi_responses import AUTH_RESPONSES, REFRESH_TOKEN_RESPONSES
-from app.core.connection_config import get_db
+from app.base.response import BaseResponse
+from app.base.response import AUTH_RESPONSES, REFRESH_TOKEN_RESPONSES
+from app.core.database import get_db
 
 router = APIRouter(prefix="/api/auth", tags=["AUTH"])
 

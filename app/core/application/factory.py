@@ -5,18 +5,18 @@ from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from config import settings
-from app.core.exception import setup_exception_handlers
-from app.core.jwt_filter import JWTAuthMiddleware
+from app.core.exceptions import setup_exception_handlers
+from app.core.middleware import JWTAuthMiddleware
 from app.auth.routers.auth_router import router as auth_router
 from app.question.routers.question_router import router as question_router
 from app.users.routers.users_router import router as users_router
 from app.vote.routers.vote_router import router as vote_router
-from app.core.connection_config import engine
-from app.core.logging_config import setup_logging
-from app.core.request_logging import RequestLoggingMiddleware
-from app.core.redis_config import RedisClient
-from app.base.base_response import BaseResponse
-from app.base.openapi_responses import ERROR_500
+from app.core.database import engine
+from app.core.observability import setup_logging
+from app.core.middleware import RequestLoggingMiddleware
+from app.core.cache import RedisClient
+from app.base.response import BaseResponse
+from app.base.response import ERROR_500
 
 logger = logging.getLogger(__name__)
 

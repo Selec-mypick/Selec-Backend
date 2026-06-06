@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, Boolean, String
 
-from app.base.base_time_entity import BaseTimeEntity
-from app.core.timezone import now
+from app.base.entity import BaseTimeEntity
+from app.core.utils import now
 
 
 class Users(BaseTimeEntity):

@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from app.base.base_response import BaseResponse
+from app.base.response import BaseResponse
 
 logger = logging.getLogger(__name__)
 

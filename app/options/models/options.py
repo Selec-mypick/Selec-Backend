@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
-from app.core.timezone import now
-from app.base.base_time_entity import BaseTimeEntity
+from app.core.utils import now
+from app.base.entity import BaseTimeEntity
 
 
 class Options(BaseTimeEntity):

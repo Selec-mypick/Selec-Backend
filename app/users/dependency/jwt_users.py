@@ -1,8 +1,8 @@
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.connection_config import get_db
-from app.core.exception import UnauthorizedException
+from app.core.database import get_db
+from app.core.exceptions import UnauthorizedException
 from app.users.repository.users_repository import UsersRepository
 from app.users.schema.dto.jwt_users import JwtUsers
 

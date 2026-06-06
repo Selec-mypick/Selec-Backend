@@ -2,7 +2,7 @@ from sqlalchemy import exists, func, select, update
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.timezone import now
+from app.core.utils import now
 from app.vote.models.vote import Vote
 
 

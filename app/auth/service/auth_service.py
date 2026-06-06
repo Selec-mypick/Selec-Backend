@@ -7,8 +7,8 @@ from app.auth.schema.request.google_oauth_request import GoogleOAuthRequest
 from app.auth.schema.request.refresh_token_request import RefreshTokenRequest
 from app.auth.schema.response.auth_response import AuthTokenResponse
 from app.auth.domain.token_domain import create_access_token, create_refresh_token
-from app.core.exception import BadRequestException, ServerException, UnauthorizedException
-from app.core.redis_config import RedisClient
+from app.core.exceptions import BadRequestException, ServerException, UnauthorizedException
+from app.core.cache import RedisClient
 from app.users.dependency.dependency import (
     SECRET_KEY,
     ALGORITHM,

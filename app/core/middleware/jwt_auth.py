@@ -1,10 +1,10 @@
 from typing import Iterable
 from fastapi.responses import JSONResponse
 from jose import jwt
-from app.base.base_response import BaseResponse
+from app.base.response import BaseResponse
 from app.users.dependency.dependency import SECRET_KEY, ALGORITHM
-from app.core.exception import UnauthorizedException
-from app.core.redis_config import RedisClient
+from app.core.exceptions import UnauthorizedException
+from app.core.cache import RedisClient
 
 
 class JWTAuthMiddleware:

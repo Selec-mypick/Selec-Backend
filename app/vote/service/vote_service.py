@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exception import BadRequestException, NotFoundException, ServerException
+from app.core.exceptions import BadRequestException, NotFoundException, ServerException
 from app.options.repository.options_repository import OptionsRepository
 from app.question.repository.question_repository import QuestionRepository
 from app.vote.repository.vote_repository import VoteRepository

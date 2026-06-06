@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exception import ConflictException, NotFoundException, ServerException
+from app.core.exceptions import ConflictException, NotFoundException, ServerException
 from app.users.repository.users_repository import UsersRepository
 from app.users.schema.request.users_request import UpdateMyInfoRequest
 from app.users.schema.response.users_response import GetMyInfoResponse

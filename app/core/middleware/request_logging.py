@@ -6,7 +6,7 @@ from uuid import uuid4
 from starlette.datastructures import Headers
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.core.logging_config import request_id_context
+from app.core.observability import request_id_context
 
 
 logger = logging.getLogger("app.request")

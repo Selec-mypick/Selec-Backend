@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.base.base_response import BaseResponse
-from app.base.openapi_responses import AUTHENTICATED_RESPONSES
-from app.core.connection_config import get_db
+from app.base.response import BaseResponse
+from app.base.response import AUTHENTICATED_RESPONSES
+from app.core.database import get_db
 from app.users.dependency.jwt_users import get_jwt_users
 from app.users.schema.dto.jwt_users import JwtUsers
 from app.users.schema.request.users_request import UpdateMyInfoRequest

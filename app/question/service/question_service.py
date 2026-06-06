@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 
-from app.core.exception import ServerException, BadRequestException, NotFoundException, ConflictException, ForbiddenException
+from app.core.exceptions import ServerException, BadRequestException, NotFoundException, ConflictException, ForbiddenException
 from app.options.models.options import Options
 from app.options.repository.options_repository import OptionsRepository
 from app.question.models.question import Question

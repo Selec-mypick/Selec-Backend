@@ -1,7 +1,7 @@
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.timezone import now
+from app.core.utils import now
 from app.options.models.options import Options
 
 
