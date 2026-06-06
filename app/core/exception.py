@@ -85,7 +85,16 @@ class ForbiddenException(BaseAPIException):
 def setup_exception_handlers(app):
     @app.exception_handler(BaseAPIException)
     async def base_api_exception_handler(request: Request, exc: BaseAPIException):
-        logger.error(f"API Exception: {exc.custom_code} - {exc.message}")
+        logger.warning(
+            "API exception occurred",
+            extra={
+                "event": "api_exception",
+                "custom_code": exc.custom_code,
+                "status_code": exc.status_code,
+                "path": request.url.path,
+                "method": request.method,
+            },
+        )
 
         return JSONResponse(
             status_code=exc.status_code,
@@ -94,7 +103,16 @@ def setup_exception_handlers(app):
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
-        logger.error(f"Unexpected Error: {str(exc)}", exc_info=True)
+        logger.error(
+            "Unexpected exception occurred",
+            extra={
+                "event": "unexpected_exception",
+                "path": request.url.path,
+                "method": request.method,
+                "error": str(exc),
+            },
+            exc_info=True,
+        )
 
         return JSONResponse(
             status_code=500,
