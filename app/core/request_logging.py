@@ -137,7 +137,7 @@ class RequestLoggingMiddleware:
                 ),
             }
 
-            if response_status_code >= 500:
+            if response_status_code >= 400:
                 logger.error(
                     "",
                     extra={
