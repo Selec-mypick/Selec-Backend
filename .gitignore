@@ -85,3 +85,9 @@ coverage.xml
 secrets/
 *.pem
 *.key
+
+# Environment files
+.env
+.env.*
+config/*.env
+!config/*.env.example
