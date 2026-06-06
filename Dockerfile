@@ -28,4 +28,4 @@ RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
 USER app
 
 # 애플리케이션 실행
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]

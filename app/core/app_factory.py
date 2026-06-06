@@ -13,6 +13,7 @@ from app.users.routers.users_router import router as users_router
 from app.vote.routers.vote_router import router as vote_router
 from app.core.connection_config import engine
 from app.core.logging_config import setup_logging
+from app.core.request_logging import RequestLoggingMiddleware
 from app.core.redis_config import RedisClient
 from app.base.base_response import BaseResponse
 from app.base.openapi_responses import ERROR_500
@@ -52,6 +53,8 @@ def create_app() -> FastAPI:
         ),
     )
 
+    app.add_middleware(RequestLoggingMiddleware)
+
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(question_router)
@@ -74,12 +77,11 @@ def create_app() -> FastAPI:
                 await conn.execute(text("SELECT 1"))
             logger.info(
                 "DB connection succeeded",
-                extra={"event": "db_connection_succeeded"},
             )
         except Exception as e:
             logger.warning(
                 "DB connection failed",
-                extra={"event": "db_connection_failed", "error": str(e)},
+                extra={"error": str(e)},
             )
 
         try:
@@ -87,7 +89,6 @@ def create_app() -> FastAPI:
             logger.info(
                 "Redis connection succeeded",
                 extra={
-                    "event": "redis_connection_succeeded",
                     "redis_host": settings.redis_host,
                     "redis_port": settings.redis_port,
                 },
@@ -95,13 +96,12 @@ def create_app() -> FastAPI:
         except Exception as e:
             logger.warning(
                 "Redis connection failed",
-                extra={"event": "redis_connection_failed", "error": str(e)},
+                extra={"error": str(e)},
             )
 
         logger.info(
             "Selec Backend started",
             extra={
-                "event": "application_started",
                 "debug": settings.debug,
                 "log_level": settings.log_level,
             },
@@ -110,6 +110,6 @@ def create_app() -> FastAPI:
     @app.on_event("shutdown")
     async def shutdown_event():
         await RedisClient.close()
-        logger.info("Redis connection closed", extra={"event": "redis_connection_closed"})
+        logger.info("Redis connection closed")
 
     return app

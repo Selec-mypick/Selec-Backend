@@ -88,7 +88,6 @@ def setup_exception_handlers(app):
         logger.warning(
             "API exception occurred",
             extra={
-                "event": "api_exception",
                 "custom_code": exc.custom_code,
                 "status_code": exc.status_code,
                 "path": request.url.path,
@@ -106,7 +105,6 @@ def setup_exception_handlers(app):
         logger.error(
             "Unexpected exception occurred",
             extra={
-                "event": "unexpected_exception",
                 "path": request.url.path,
                 "method": request.method,
                 "error": str(exc),
