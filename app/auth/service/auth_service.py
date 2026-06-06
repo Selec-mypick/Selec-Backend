@@ -1,11 +1,11 @@
 import aiohttp
 from jose import jwt, JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import uuid4
 
 from config import settings
-from app.auth.schema.request.google_oauth_request import GoogleOAuthRequest
-from app.auth.schema.request.refresh_token_request import RefreshTokenRequest
-from app.auth.schema.response.auth_response import AuthTokenResponse
+from app.auth.schema.request.auth_request import GoogleOAuthRequest, RefreshTokenRequest
+from app.auth.schema.response.auth_response import AuthTokenResponse, CreateTestUserResponse
 from app.auth.domain.token_domain import create_access_token, create_refresh_token
 from app.core.exceptions import BadRequestException, ServerException, UnauthorizedException
 from app.core.cache import RedisClient
@@ -16,6 +16,7 @@ from app.users.dependency.dependency import (
     REFRESH_TOKEN_EXPIRE_DAYS,
 )
 from app.users.repository.users_repository import UsersRepository
+from app.users.models.users import Users
 
 GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 ACCESS_TOKEN_TTL_SECONDS = ACCESS_TOKEN_EXPIRE_MINUTES * 60
@@ -68,6 +69,47 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
         raise ServerException(f"Google OAuth 로그인 처리 중 오류가 발생했습니다: {str(e)}")
 
     return AuthTokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=expires_in,
+    )
+
+
+async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
+    test_uuid = uuid4().hex
+    google_id = f"test_{test_uuid[:12]}"
+    nick_name = f"test_{test_uuid[:12]}"
+    try:
+        users = Users.create_from_google(
+            google_id=google_id,
+            email=f"{google_id}@test.local",
+            name="테스트 유저",
+            profile_image=None,
+        )
+        users.nick_name = nick_name
+        users = await UsersRepository.save(db, users)
+
+        access_token, expires_in = create_access_token(users.users_seq)
+        refresh_token = create_refresh_token(users.users_seq)
+
+        redis_client = await RedisClient.get_client()
+        await redis_client.set(
+            f"auth:white:{users.users_seq}",
+            access_token,
+            ex=ACCESS_TOKEN_TTL_SECONDS,
+        )
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise ServerException(f"테스트 유저 생성 중 오류가 발생했습니다: {str(e)}")
+
+    return CreateTestUserResponse(
+        users_seq=users.users_seq,
+        google_id=users.google_id,
+        nick_name=users.nick_name,
+        email=users.email,
+        name=users.name,
+        profile_image=users.profile_image,
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=expires_in,
