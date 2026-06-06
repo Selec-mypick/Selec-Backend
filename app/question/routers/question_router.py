@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.users.dependency.jwt_users import get_jwt_users
 from app.users.schema.dto.jwt_users import JwtUsers
 from app.question.schema.request.question_request import CreateQuestionRequest, UpdateQuestionRequest
-from app.question.schema.response.question_response import GetQuestionResponse
+from app.question.schema.response.question_response import CreateQuestionResponse, GetQuestionResponse
 from app.question.service.question_service import create_question, delete_question, get_question, update_question
 
 router = APIRouter(prefix="/api/question", tags=["QUESTION"])
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/question", tags=["QUESTION"])
 
 @router.post(
     "",
-    response_model=BaseResponse[dict],
+    response_model=BaseResponse[CreateQuestionResponse],
     status_code=status.HTTP_201_CREATED,
     responses=AUTHENTICATED_RESPONSES,
 )
@@ -36,8 +36,8 @@ async def create_question_endpoint(
     - `401`: 인증 실패
     - `500`: 서버 오류
     """
-    await create_question(request, jwt_users.users_seq, db)
-    return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS)
+    result = await create_question(request, jwt_users.users_seq, db)
+    return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS, result)
 
 
 @router.get(

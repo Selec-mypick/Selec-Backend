@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     from app.question.models.question import Question
 
 
+class CreateQuestionResponse(BaseModel):
+    question_seq: int
+
+
 class GetQuestionResponse(BaseModel):
     question_seq: int
     title: str

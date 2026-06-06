@@ -7,11 +7,11 @@ from app.options.repository.options_repository import OptionsRepository
 from app.question.models.question import Question
 from app.question.repository.question_repository import QuestionRepository
 from app.question.schema.request.question_request import CreateQuestionRequest, UpdateQuestionRequest
-from app.question.schema.response.question_response import GetQuestionResponse
+from app.question.schema.response.question_response import CreateQuestionResponse, GetQuestionResponse
 from app.vote.repository.vote_repository import VoteRepository
 
 
-async def create_question(request: CreateQuestionRequest, users_seq: int, db: AsyncSession) -> None:
+async def create_question(request: CreateQuestionRequest, users_seq: int, db: AsyncSession) -> CreateQuestionResponse:
     new_question = Question(
         users_seq=users_seq,
         title=request.title,
@@ -32,6 +32,8 @@ async def create_question(request: CreateQuestionRequest, users_seq: int, db: As
     except Exception as e:
         await db.rollback()
         raise ServerException(f"질문 생성 중 오류가 발생했습니다: {str(e)}")
+
+    return CreateQuestionResponse(question_seq=saved_question.question_seq)
 
 
 async def get_question(question_seq: int, users_seq: int, db: AsyncSession) -> GetQuestionResponse:
