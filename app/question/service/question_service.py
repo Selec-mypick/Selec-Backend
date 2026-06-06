@@ -18,13 +18,15 @@ async def create_question(request: CreateQuestionRequest, users_seq: int, db: As
         description=request.description or None,
         is_anonymous=request.is_anonymous,
         status='OPEN',
-        active=True
+        active=True,
+        created_by=users_seq,
+        updated_by=users_seq,
     )
 
     try:
         saved_question = await QuestionRepository.save(db, new_question)
         options = [
-            Options.create(saved_question.question_seq, option)
+            Options.create(saved_question.question_seq, option, users_seq)
             for option in request.options
         ]
         await OptionsRepository.save_all(db, options)
@@ -73,7 +75,7 @@ async def update_question(
 
     for option in request.options:
         if option.options_seq is None:
-            insert_options.append(Options.create(question_seq, option.content))
+            insert_options.append(Options.create(question_seq, option.content, users_seq))
             continue
 
         if option.options_seq in update_option_seqs:
@@ -101,15 +103,16 @@ async def update_question(
             title=request.title,
             description=request.description,
             is_anonymous=request.is_anonymous,
+            updated_by=users_seq,
         )
 
         for option_request in update_option_requests:
             option = existing_options_by_seq[option_request.options_seq]
-            option.update_content(option_request.content)
+            option.update_content(option_request.content, users_seq)
             response_options.append(option)
 
-        await OptionsRepository.deactivate_by_options_seqs(db, question_seq, delete_option_seqs)
-        await VoteRepository.deactivate_by_question_seq_and_options_seqs(db, question_seq, delete_option_seqs)
+        await OptionsRepository.deactivate_by_options_seqs(db, question_seq, delete_option_seqs, users_seq)
+        await VoteRepository.deactivate_by_question_seq_and_options_seqs(db, question_seq, delete_option_seqs, users_seq)
 
         if insert_options:
             await OptionsRepository.save_all(db, insert_options)
@@ -134,9 +137,9 @@ async def delete_question(question_seq: int, users_seq: int, db: AsyncSession) -
         raise ForbiddenException("질문 삭제 권한이 없습니다.")
 
     try:
-        question.deactivate()
-        await OptionsRepository.deactivate_by_question_seq(db, question_seq)
-        await VoteRepository.deactivate_by_question_seq(db, question_seq)
+        question.deactivate(users_seq)
+        await OptionsRepository.deactivate_by_question_seq(db, question_seq, users_seq)
+        await VoteRepository.deactivate_by_question_seq(db, question_seq, users_seq)
 
         await db.commit()
     except StaleDataError:

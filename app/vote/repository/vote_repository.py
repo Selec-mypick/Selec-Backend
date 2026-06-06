@@ -19,6 +19,8 @@ class VoteRepository:
             question_seq=question_seq,
             options_seq=options_seq,
             active=True,
+            created_by=users_seq,
+            updated_by=users_seq,
             created_at=now(),
             updated_at=now(),
         )
@@ -26,6 +28,7 @@ class VoteRepository:
             statement.on_duplicate_key_update(
                 options_seq=options_seq,
                 active=True,
+                updated_by=users_seq,
                 updated_at=now(),
             )
         )
@@ -93,7 +96,7 @@ class VoteRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def deactivate_by_question_seq(db: AsyncSession, question_seq: int) -> int:
+    async def deactivate_by_question_seq(db: AsyncSession, question_seq: int, updated_by: int) -> int:
         result = await db.execute(
             update(Vote)
             .where(
@@ -102,6 +105,7 @@ class VoteRepository:
             )
             .values(
                 active=False,
+                updated_by=updated_by,
                 updated_at=now(),
             )
         )
@@ -112,6 +116,7 @@ class VoteRepository:
             db: AsyncSession,
             question_seq: int,
             options_seqs: set[int],
+            updated_by: int,
     ) -> int:
         if not options_seqs:
             return 0
@@ -125,6 +130,7 @@ class VoteRepository:
             )
             .values(
                 active=False,
+                updated_by=updated_by,
                 updated_at=now(),
             )
         )

@@ -38,7 +38,7 @@ async def delete_vote(question_seq: int, users_seq: int, db: AsyncSession) -> No
         raise NotFoundException("투표 내역이 없습니다.")
 
     try:
-        vote.deactivate()
+        vote.deactivate(users_seq)
         await db.commit()
     except Exception as e:
         await db.rollback()

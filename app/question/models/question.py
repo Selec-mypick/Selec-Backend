@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 
+from app.base.entity import BaseAuditEntity
 from app.core.utils import now
-from app.base.entity import BaseTimeEntity
 
 
-class Question(BaseTimeEntity):
+class Question(BaseAuditEntity):
     __tablename__ = 'question'
 
     question_seq = Column(Integer, primary_key=True, index=True)
@@ -19,12 +19,14 @@ class Question(BaseTimeEntity):
     version = Column(Integer, nullable=False, default=0)
     __mapper_args__ = {"version_id_col": version}
 
-    def update(self, title: str, description: str | None, is_anonymous: bool) -> None:
+    def update(self, title: str, description: str | None, is_anonymous: bool, updated_by: int) -> None:
         self.title = title
         self.description = description or None
         self.is_anonymous = is_anonymous
+        self.updated_by = updated_by
         self.updated_at = now()
 
-    def deactivate(self) -> None:
+    def deactivate(self, updated_by: int) -> None:
         self.active = False
+        self.updated_by = updated_by
         self.updated_at = now()

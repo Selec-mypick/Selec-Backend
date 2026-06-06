@@ -1,3 +1,3 @@
-from app.base.entity.timestamp_entity import BaseTimeEntity
+from app.base.entity.base_entity import BaseAuditEntity, BaseTimeEntity
 
-__all__ = ["BaseTimeEntity"]
+__all__ = ["BaseAuditEntity", "BaseTimeEntity"]

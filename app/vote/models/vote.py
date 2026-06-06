@@ -1,11 +1,11 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
 
+from app.base.entity import BaseAuditEntity
 from app.core.utils import now
-from app.base.entity import BaseTimeEntity
 
 
-class Vote(BaseTimeEntity):
+class Vote(BaseAuditEntity):
     __tablename__ = 'vote'
     __table_args__ = (
         UniqueConstraint('users_seq', 'question_seq', name='uq_vote_user_question'),
@@ -28,13 +28,17 @@ class Vote(BaseTimeEntity):
             question_seq=question_seq,
             options_seq=options_seq,
             active=True,
+            created_by=users_seq,
+            updated_by=users_seq,
         )
 
-    def update_option(self, options_seq: int) -> None:
+    def update_option(self, options_seq: int, updated_by: int) -> None:
         self.options_seq = options_seq
         self.active = True
+        self.updated_by = updated_by
         self.updated_at = now()
 
-    def deactivate(self) -> None:
+    def deactivate(self, updated_by: int) -> None:
         self.active = False
+        self.updated_by = updated_by
         self.updated_at = now()
