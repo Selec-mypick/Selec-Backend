@@ -56,8 +56,8 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
 
         pipe = redis_client.pipeline()
         if previous_token is not None:
-            pipe.set(black_key, previous_token, ex=BLACKLIST_TTL_SECONDS)
-        pipe.set(white_key, access_token, ex=ACCESS_TOKEN_TTL_SECONDS)
+            await pipe.set(black_key, previous_token, ex=BLACKLIST_TTL_SECONDS)
+        await pipe.set(white_key, access_token, ex=ACCESS_TOKEN_TTL_SECONDS)
         await pipe.execute()
         await db.commit()
     except BadRequestException:
@@ -106,8 +106,8 @@ async def refresh_access_token(request: RefreshTokenRequest, db: AsyncSession) -
 
         pipe = redis_client.pipeline()
         if previous_token is not None:
-            pipe.set(black_key, previous_token, ex=BLACKLIST_TTL_SECONDS)
-        pipe.set(white_key, access_token, ex=ACCESS_TOKEN_TTL_SECONDS)
+            await pipe.set(black_key, previous_token, ex=BLACKLIST_TTL_SECONDS)
+        await pipe.set(white_key, access_token, ex=ACCESS_TOKEN_TTL_SECONDS)
         await pipe.execute()
     except Exception as e:
         raise ServerException(f"토큰 재발급 중 오류가 발생했습니다: {str(e)}")

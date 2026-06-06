@@ -5,7 +5,7 @@ from app.base.base_response import BaseResponse
 from app.base.openapi_responses import AUTHENTICATED_RESPONSES, QUESTION_READ_RESPONSES, QUESTION_WRITE_RESPONSES
 from app.core.connection_config import get_db
 from app.users.dependency.jwt_users import get_jwt_users
-from app.users.schema.jwt_users import JwtUsers
+from app.users.schema.dto.jwt_users import JwtUsers
 from app.question.schema.request.question_request import CreateQuestionRequest, UpdateQuestionRequest
 from app.question.schema.response.question_response import GetQuestionResponse
 from app.question.service.question_service import create_question, delete_question, get_question, update_question

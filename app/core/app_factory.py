@@ -6,6 +6,7 @@ from app.core.exception import setup_exception_handlers
 from app.core.jwt_filter import JWTAuthMiddleware
 from app.auth.routers.auth_router import router as auth_router
 from app.question.routers.question_router import router as question_router
+from app.users.routers.users_router import router as users_router
 from app.vote.routers.vote_router import router as vote_router
 from app.core.migration import auto_update_schema
 from app.core.redis_config import RedisClient
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(auth_router)
+    app.include_router(users_router)
     app.include_router(question_router)
     app.include_router(vote_router)
 

@@ -5,7 +5,7 @@ from app.base.base_response import BaseResponse
 from app.base.openapi_responses import VOTE_RESPONSES
 from app.core.connection_config import get_db
 from app.users.dependency.jwt_users import get_jwt_users
-from app.users.schema.jwt_users import JwtUsers
+from app.users.schema.dto.jwt_users import JwtUsers
 from app.vote.schema.request.vote_request import CreateVoteRequest
 from app.vote.service.vote_service import create_vote, delete_vote
 

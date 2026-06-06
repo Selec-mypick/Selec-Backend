@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.connection_config import get_db
 from app.core.exception import UnauthorizedException
 from app.users.repository.users_repository import UsersRepository
-from app.users.schema.jwt_users import JwtUsers
+from app.users.schema.dto.jwt_users import JwtUsers
 
 
 async def get_jwt_users(request: Request, db: AsyncSession = Depends(get_db)) -> JwtUsers:

@@ -15,21 +15,10 @@ class UsersRepository:
     @staticmethod
     async def find_by_users_seq(db: AsyncSession, users_seq: int) -> Users | None:
         result = await db.execute(
-            select(Users).where(Users.users_seq == users_seq)
-        )
-        return result.scalar_one_or_none()
-
-    @staticmethod
-    async def find_by_google_id(db: AsyncSession, google_id: str) -> Users | None:
-        result = await db.execute(
-            select(Users).where(Users.google_id == google_id)
-        )
-        return result.scalar_one_or_none()
-
-    @staticmethod
-    async def find_by_nick_name(db: AsyncSession, nick_name: str) -> Users | None:
-        result = await db.execute(
-            select(Users).where(Users.nick_name == nick_name)
+            select(Users).where(
+                Users.users_seq == users_seq,
+                Users.active.is_(True)
+            )
         )
         return result.scalar_one_or_none()
 
@@ -42,7 +31,9 @@ class UsersRepository:
             profile_image: str | None,
     ) -> Users:
         result = await db.execute(
-            select(Users).where(Users.google_id == google_id)
+            select(Users).where(
+                Users.google_id == google_id
+            )
         )
         existing_users = result.scalar_one_or_none()
 
