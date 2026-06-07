@@ -12,6 +12,12 @@ class GetOptionResponse(BaseModel):
     content: str
     vote_count: int | None = None
 
+    def dict(self, *args, **kwargs):
+        data = super().dict(*args, **kwargs)
+        if data.get("vote_count") is None:
+            data.pop("vote_count", None)
+        return data
+
     @classmethod
     def from_entity(
             cls,

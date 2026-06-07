@@ -43,7 +43,6 @@ async def create_question_endpoint(
 @router.get(
     "/{question_seq}",
     response_model=BaseResponse[GetQuestionResponse],
-    response_model_exclude_none=True,
     responses=QUESTION_READ_RESPONSES,
 )
 async def get_question_endpoint(
