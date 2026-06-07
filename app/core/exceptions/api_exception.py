@@ -26,33 +26,9 @@ class BaseAPIException(Exception):
         super().__init__(self.message)
 
 
-class BadRequestException(BaseAPIException):
-    pass
-
-
-class ConflictException(BaseAPIException):
-    pass
-
-
-class NotFoundException(BaseAPIException):
-    pass
-
-
-class ServerException(BaseAPIException):
-    pass
-
-
-class UnauthorizedException(BaseAPIException):
-    pass
-
-
-class ForbiddenException(BaseAPIException):
-    pass
-
-
 def setup_exception_handlers(app):
     @app.exception_handler(BaseAPIException)
-    async def base_api_exception_handler(request: Request, exc: BaseAPIException):
+    async def base_api_exception_handler(exc: BaseAPIException):
         return JSONResponse(
             status_code=exc.status_code,
             content=BaseResponse.of_fail(exc.status_code, exc.code, exc.message).to_content(),

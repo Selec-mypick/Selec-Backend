@@ -1,6 +1,6 @@
 import aiohttp
 
-from app.core.exceptions import BadRequestException, ErrorCode, ServerException
+from app.core.exceptions import BaseAPIException, ErrorCode
 from config import settings
 
 
@@ -30,14 +30,14 @@ class GeminiClient:
                     if response.status >= 400:
                         error = data.get("error", {}) if isinstance(data, dict) else {}
                         message = error.get("message") or ErrorCode.GEMINI_API_BAD_REQUEST.message
-                        raise BadRequestException(ErrorCode.GEMINI_API_BAD_REQUEST, message=message)
+                        raise BaseAPIException(ErrorCode.GEMINI_API_BAD_REQUEST, message=message)
                     return data
-        except BadRequestException:
+        except BaseAPIException:
             raise
         except ValueError as e:
-            raise ServerException(ErrorCode.GEMINI_API_CALL_FAILED, message=str(e))
+            raise BaseAPIException(ErrorCode.GEMINI_API_CALL_FAILED, message=str(e))
         except Exception as e:
-            raise ServerException(
+            raise BaseAPIException(
                 ErrorCode.GEMINI_API_CALL_FAILED,
                 message=f"{ErrorCode.GEMINI_API_CALL_FAILED.message}: {str(e)}",
             )

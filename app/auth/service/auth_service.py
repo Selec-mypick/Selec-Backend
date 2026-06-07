@@ -14,13 +14,7 @@ from app.auth.domain.token_domain import (
 from app.auth.schema.request.auth_request import GoogleOAuthRequest, IssueTestTokenRequest, RefreshTokenRequest
 from app.auth.schema.response.auth_response import AuthTokenResponse, CreateTestUserResponse
 from app.core.database.transaction import run_in_transaction
-from app.core.exceptions import (
-    BadRequestException,
-    ConflictException,
-    ErrorCode,
-    ServerException,
-    UnauthorizedException,
-)
+from app.core.exceptions import BaseAPIException, ErrorCode
 from app.users.repository.users_repository import UsersRepository
 from app.users.models.users import Users
 
@@ -33,14 +27,14 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
             google_user = await response.json()
             if response.status != 200:
                 message = google_user.get("error_description") or google_user.get("error") or ErrorCode.GOOGLE_TOKEN_VERIFY_FAILED.message
-                raise BadRequestException(ErrorCode.GOOGLE_TOKEN_VERIFY_FAILED, message=message)
+                raise BaseAPIException(ErrorCode.GOOGLE_TOKEN_VERIFY_FAILED, message=message)
 
     if google_user.get("aud") != settings.google_client_id:
-        raise BadRequestException(ErrorCode.GOOGLE_TOKEN_AUDIENCE_MISMATCH)
+        raise BaseAPIException(ErrorCode.GOOGLE_TOKEN_AUDIENCE_MISMATCH)
 
     google_id = google_user.get("sub")
     if not google_id:
-        raise BadRequestException(ErrorCode.GOOGLE_USER_NOT_FOUND)
+        raise BaseAPIException(ErrorCode.GOOGLE_USER_NOT_FOUND)
 
     async def upsert_google_user() -> str:
         users = await UsersRepository.upsert_by_google(
@@ -56,7 +50,7 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
         db,
         upsert_google_user,
         "Google OAuth 로그인 처리 중 오류가 발생했습니다",
-        integrity_exception=ConflictException(ErrorCode.GOOGLE_REGISTER_CONFLICT),
+        integrity_exception=BaseAPIException(ErrorCode.GOOGLE_REGISTER_CONFLICT),
     )
 
     access_token, expires_in = create_access_token(users_seq)
@@ -68,7 +62,7 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
             await store_auth_token(store_type="black", token=previous_token)
         await store_auth_token(store_type="white", token=access_token, users_seq=users_seq)
     except Exception as e:
-        raise ServerException(ErrorCode.TOKEN_STORE_FAILED, message=f"{ErrorCode.TOKEN_STORE_FAILED.message}: {str(e)}")
+        raise BaseAPIException(ErrorCode.TOKEN_STORE_FAILED, message=f"{ErrorCode.TOKEN_STORE_FAILED.message}: {str(e)}")
 
     return AuthTokenResponse(
         access_token=access_token,
@@ -96,7 +90,7 @@ async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
         db,
         save_test_user,
         "테스트 유저 생성 중 오류가 발생했습니다",
-        integrity_exception=ConflictException(ErrorCode.TEST_USER_CREATE_CONFLICT),
+        integrity_exception=BaseAPIException(ErrorCode.TEST_USER_CREATE_CONFLICT),
     )
 
     access_token, expires_in = create_access_token(users.users_seq)
@@ -105,7 +99,7 @@ async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
     try:
         await store_auth_token(store_type="white", token=access_token, users_seq=users.users_seq)
     except Exception as e:
-        raise ServerException(ErrorCode.TOKEN_STORE_FAILED, message=f"{ErrorCode.TOKEN_STORE_FAILED.message}: {str(e)}")
+        raise BaseAPIException(ErrorCode.TOKEN_STORE_FAILED, message=f"{ErrorCode.TOKEN_STORE_FAILED.message}: {str(e)}")
 
     return CreateTestUserResponse(
         users_seq=users.users_seq,
@@ -123,9 +117,9 @@ async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
 async def issue_test_token(request: IssueTestTokenRequest, db: AsyncSession) -> AuthTokenResponse:
     users = await UsersRepository.find_by_users_seq(db, request.users_seq)
     if users is None:
-        raise UnauthorizedException(ErrorCode.AUTH_USER_NOT_FOUND)
+        raise BaseAPIException(ErrorCode.AUTH_USER_NOT_FOUND)
     if not users.active:
-        raise UnauthorizedException(ErrorCode.AUTH_USER_INACTIVE)
+        raise BaseAPIException(ErrorCode.AUTH_USER_INACTIVE)
 
     access_token, expires_in = create_access_token(users.users_seq)
     refresh_token = create_refresh_token(users.users_seq)
@@ -136,7 +130,7 @@ async def issue_test_token(request: IssueTestTokenRequest, db: AsyncSession) -> 
             await store_auth_token(store_type="black", token=previous_token)
         await store_auth_token(store_type="white", token=access_token, users_seq=users.users_seq)
     except Exception as e:
-        raise ServerException(ErrorCode.TOKEN_STORE_FAILED, message=f"{ErrorCode.TOKEN_STORE_FAILED.message}: {str(e)}")
+        raise BaseAPIException(ErrorCode.TOKEN_STORE_FAILED, message=f"{ErrorCode.TOKEN_STORE_FAILED.message}: {str(e)}")
 
     return AuthTokenResponse(
         access_token=access_token,
@@ -149,29 +143,29 @@ async def refresh_access_token(request: RefreshTokenRequest, db: AsyncSession) -
     try:
         payload = jwt.decode(request.refresh_token, settings.secret_key, algorithms=[settings.jwt_algorithm])
     except jwt.ExpiredSignatureError:
-        raise UnauthorizedException(ErrorCode.REFRESH_TOKEN_EXPIRED)
+        raise BaseAPIException(ErrorCode.REFRESH_TOKEN_EXPIRED)
     except JWTError:
-        raise UnauthorizedException(ErrorCode.REFRESH_TOKEN_INVALID)
+        raise BaseAPIException(ErrorCode.REFRESH_TOKEN_INVALID)
 
     if payload.get("type") != "refresh":
-        raise UnauthorizedException(ErrorCode.REFRESH_TOKEN_TYPE_INVALID)
+        raise BaseAPIException(ErrorCode.REFRESH_TOKEN_TYPE_INVALID)
 
     users_seq = payload.get("users_seq") or payload.get("sub")
     if not users_seq:
-        raise UnauthorizedException(ErrorCode.REFRESH_TOKEN_MISSING_USER)
+        raise BaseAPIException(ErrorCode.REFRESH_TOKEN_MISSING_USER)
 
     users = await UsersRepository.find_by_users_seq(db, users_seq)
     if users is None:
-        raise UnauthorizedException(ErrorCode.AUTH_USER_NOT_FOUND)
+        raise BaseAPIException(ErrorCode.AUTH_USER_NOT_FOUND)
     if not users.active:
-        raise UnauthorizedException(ErrorCode.AUTH_USER_INACTIVE)
+        raise BaseAPIException(ErrorCode.AUTH_USER_INACTIVE)
 
     access_token, expires_in = create_access_token(users.users_seq)
     refresh_token = create_refresh_token(users.users_seq)
 
     try:
         if await is_token_blacklisted(request.refresh_token):
-            raise UnauthorizedException(ErrorCode.REFRESH_TOKEN_BLACKLISTED)
+            raise BaseAPIException(ErrorCode.REFRESH_TOKEN_BLACKLISTED)
 
         await store_auth_token(store_type="black", token=request.refresh_token)
 
@@ -179,10 +173,10 @@ async def refresh_access_token(request: RefreshTokenRequest, db: AsyncSession) -
         if previous_token is not None:
             await store_auth_token(store_type="black", token=previous_token)
         await store_auth_token(store_type="white", token=access_token, users_seq=users.users_seq)
-    except UnauthorizedException:
+    except BaseAPIException:
         raise
     except Exception as e:
-        raise ServerException(ErrorCode.TOKEN_REFRESH_FAILED, message=f"{ErrorCode.TOKEN_REFRESH_FAILED.message}: {str(e)}")
+        raise BaseAPIException(ErrorCode.TOKEN_REFRESH_FAILED, message=f"{ErrorCode.TOKEN_REFRESH_FAILED.message}: {str(e)}")
 
     return AuthTokenResponse(
         access_token=access_token,

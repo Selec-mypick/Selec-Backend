@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from app.core.cache.redis_lock import RedisLock
 from app.core.database.session import AsyncSessionLocal
-from app.core.exceptions import ErrorCode, ServerException
+from app.core.exceptions import BaseAPIException, ErrorCode
 from app.question.schema.request.question_request import CreateQuestionRequest
 from app.question.service.question_service import create_question
 from config import settings
@@ -41,7 +41,7 @@ class GeminiVoteCreateJob:
                 return
 
             if not self.model:
-                raise ServerException(ErrorCode.GEMINI_MODEL_NOT_CONFIGURED)
+                raise BaseAPIException(ErrorCode.GEMINI_MODEL_NOT_CONFIGURED)
 
             prompt = self.read_prompt()
             response = await GeminiClient.generate_content(prompt, self.model)
@@ -52,11 +52,11 @@ class GeminiVoteCreateJob:
 
     def read_prompt(self) -> str:
         if not self.prompt_path.exists():
-            raise ServerException(ErrorCode.GEMINI_PROMPT_NOT_FOUND)
+            raise BaseAPIException(ErrorCode.GEMINI_PROMPT_NOT_FOUND)
 
         prompt = self.prompt_path.read_text(encoding="utf-8").strip()
         if not prompt:
-            raise ServerException(ErrorCode.GEMINI_PROMPT_EMPTY)
+            raise BaseAPIException(ErrorCode.GEMINI_PROMPT_EMPTY)
 
         return prompt
 
@@ -68,7 +68,7 @@ class GeminiVoteCreateJob:
     def extract_response_text(self, data: dict) -> str:
         candidates = data.get("candidates") or []
         if not candidates:
-            raise ServerException(ErrorCode.GEMINI_RESPONSE_NO_CANDIDATES)
+            raise BaseAPIException(ErrorCode.GEMINI_RESPONSE_NO_CANDIDATES)
 
         parts = candidates[0].get("content", {}).get("parts") or []
         texts = [
@@ -78,7 +78,7 @@ class GeminiVoteCreateJob:
         ]
 
         if not texts:
-            raise ServerException(ErrorCode.GEMINI_RESPONSE_NO_TEXT)
+            raise BaseAPIException(ErrorCode.GEMINI_RESPONSE_NO_TEXT)
 
         return "".join(texts).strip()
 
@@ -92,26 +92,26 @@ class GeminiVoteCreateJob:
         try:
             parsed = json.loads(text)
         except json.JSONDecodeError:
-            raise ServerException(
+            raise BaseAPIException(
                 ErrorCode.GEMINI_RESPONSE_INVALID_JSON,
                 message=f"{ErrorCode.GEMINI_RESPONSE_INVALID_JSON.message}. 응답값: {text}",
             )
 
         if parsed.get("is_anonymous") is not True:
-            raise ServerException(ErrorCode.GEMINI_RESPONSE_INVALID_ANONYMOUS)
+            raise BaseAPIException(ErrorCode.GEMINI_RESPONSE_INVALID_ANONYMOUS)
 
         options = parsed.get("options")
         if not isinstance(options, list):
-            raise ServerException(ErrorCode.GEMINI_RESPONSE_INVALID_OPTIONS_TYPE)
+            raise BaseAPIException(ErrorCode.GEMINI_RESPONSE_INVALID_OPTIONS_TYPE)
 
         if len(options) < 3 or len(options) > 5:
-            raise ServerException(ErrorCode.GEMINI_RESPONSE_INVALID_OPTIONS_COUNT)
+            raise BaseAPIException(ErrorCode.GEMINI_RESPONSE_INVALID_OPTIONS_COUNT)
 
         if any(not isinstance(option, str) or not option.strip() for option in options):
-            raise ServerException(ErrorCode.GEMINI_RESPONSE_INVALID_OPTIONS_ITEM)
+            raise BaseAPIException(ErrorCode.GEMINI_RESPONSE_INVALID_OPTIONS_ITEM)
 
         if len(set(options)) != len(options):
-            raise ServerException(ErrorCode.GEMINI_RESPONSE_DUPLICATE_OPTIONS)
+            raise BaseAPIException(ErrorCode.GEMINI_RESPONSE_DUPLICATE_OPTIONS)
 
         try:
             return CreateQuestionRequest(
@@ -121,7 +121,7 @@ class GeminiVoteCreateJob:
                 options=[option.strip() for option in options],
             )
         except ValidationError as e:
-            raise ServerException(
+            raise BaseAPIException(
                 ErrorCode.GEMINI_RESPONSE_FIELD_VALIDATION_FAILED,
                 message=f"{ErrorCode.GEMINI_RESPONSE_FIELD_VALIDATION_FAILED.message}: {e}",
             )
