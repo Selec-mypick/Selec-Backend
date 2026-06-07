@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel
 
@@ -8,6 +8,7 @@ from app.options.schema.response.options_response import GetOptionResponse
 if TYPE_CHECKING:
     from app.options.models.options import Options
     from app.question.models.question import Question
+    from app.users.models.users import Users
 
 
 class CreateQuestionResponse(BaseModel):
@@ -92,4 +93,60 @@ class GetQuestionResponse(BaseModel):
                 )
                 for option, vote_count, _ in option_rows
             ],
+        )
+
+
+class QuestionResultVoterResponse(BaseModel):
+    google_id: str
+    nick_name: str | None
+    email: str | None
+    name: str | None
+    profile_image: str | None
+
+    @classmethod
+    def from_entity(cls, users: "Users") -> "QuestionResultVoterResponse":
+        return cls(
+            google_id=users.google_id,
+            nick_name=users.nick_name,
+            email=users.email,
+            name=users.name,
+            profile_image=users.profile_image,
+        )
+
+
+class QuestionResultOptionResponse(BaseModel):
+    options_seq: int
+    question_seq: int
+    content: str
+    vote_count: int
+    voters: list[QuestionResultVoterResponse]
+
+
+class GetQuestionVoteResultResponse(BaseModel):
+    options: list[QuestionResultOptionResponse]
+
+    @classmethod
+    def from_result_rows(
+            cls,
+            option_rows: list[tuple["Options", Optional["Users"]]],
+    ) -> "GetQuestionVoteResultResponse":
+        options_by_seq: dict[int, QuestionResultOptionResponse] = {}
+
+        for option, voter in option_rows:
+            if option.options_seq not in options_by_seq:
+                options_by_seq[option.options_seq] = QuestionResultOptionResponse(
+                    options_seq=option.options_seq,
+                    question_seq=option.question_seq,
+                    content=option.content,
+                    vote_count=0,
+                    voters=[],
+                )
+
+            if voter is not None:
+                result_option = options_by_seq[option.options_seq]
+                result_option.voters.append(QuestionResultVoterResponse.from_entity(voter))
+                result_option.vote_count += 1
+
+        return cls(
+            options=list(options_by_seq.values()),
         )

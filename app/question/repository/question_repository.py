@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.options.models.options import Options
 from app.question.models.question import Question
+from app.users.models.users import Users
 from app.vote.models.vote import Vote
 
 
@@ -92,3 +93,33 @@ class QuestionRepository:
             for _, option, vote_count, selected_option_seq in rows
             if option is not None
         ]
+
+    @staticmethod
+    async def find_result_options_by_question_seq(
+            db: AsyncSession,
+            question_seq: int,
+    ) -> list[tuple[Options, Users | None]]:
+        result = await db.execute(
+            select(Options, Users)
+            .outerjoin(
+                Vote,
+                and_(
+                    Vote.question_seq == question_seq,
+                    Vote.options_seq == Options.options_seq,
+                    Vote.active.is_(True),
+                ),
+            )
+            .outerjoin(
+                Users,
+                and_(
+                    Users.users_seq == Vote.users_seq,
+                    Users.active.is_(True),
+                ),
+            )
+            .where(
+                Options.question_seq == question_seq,
+                Options.active.is_(True),
+            )
+            .order_by(Options.options_seq.asc(), Vote.vote_seq.asc())
+        )
+        return result.all()
