@@ -29,7 +29,7 @@ class QuestionRepository:
             db: AsyncSession,
             question_seq: int,
             users_seq: int,
-    ) -> tuple[Question, list[tuple[Options, int, bool]]] | None:
+    ) -> tuple[Question, list[tuple[Options, int, int | None]]] | None:
         vote_count_subquery = (
             select(
                 Vote.options_seq.label("options_seq"),
@@ -58,7 +58,7 @@ class QuestionRepository:
                 Question,
                 Options,
                 func.coalesce(vote_count_subquery.c.vote_count, 0),
-                user_vote_subquery.c.options_seq.isnot(None),
+                user_vote_subquery.c.options_seq,
             )
             .outerjoin(
                 Options,
@@ -88,7 +88,7 @@ class QuestionRepository:
 
         question = rows[0][0]
         return question, [
-            (option, vote_count, is_selected)
-            for _, option, vote_count, is_selected in rows
+            (option, vote_count, selected_option_seq)
+            for _, option, vote_count, selected_option_seq in rows
             if option is not None
         ]

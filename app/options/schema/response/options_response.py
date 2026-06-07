@@ -15,14 +15,12 @@ class GetOptionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     vote_count: int | None = None
-    is_selected: bool | None = None
 
     @classmethod
     def from_entity(
             cls,
             option: "Options",
             vote_count: int | None = None,
-            is_selected: bool | None = None,
     ) -> "GetOptionResponse":
         return cls(
             options_seq=option.options_seq,
@@ -32,5 +30,4 @@ class GetOptionResponse(BaseModel):
             created_at=option.created_at,
             updated_at=option.updated_at,
             vote_count=vote_count,
-            is_selected=is_selected,
         )

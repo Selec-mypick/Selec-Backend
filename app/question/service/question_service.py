@@ -44,7 +44,7 @@ async def get_question(question_seq: int, users_seq: int, db: AsyncSession) -> G
         raise NotFoundException("존재하지 않는 질문입니다.")
 
     question, option_rows = question_detail
-    return GetQuestionResponse.from_detail_rows(question, option_rows)
+    return GetQuestionResponse.from_detail_rows(question, option_rows, users_seq)
 
 
 async def update_question(
@@ -126,7 +126,7 @@ async def update_question(
         await db.rollback()
         raise ServerException(f"질문 수정 중 오류가 발생했습니다: {str(e)}")
 
-    return GetQuestionResponse.from_entity(question, response_options)
+    return GetQuestionResponse.from_entity(question, response_options, is_creator=True)
 
 
 async def delete_question(question_seq: int, users_seq: int, db: AsyncSession) -> None:

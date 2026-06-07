@@ -53,7 +53,7 @@ async def get_question_endpoint(
     """
     질문 단건 조회
 
-    본인이 해당 질문에 투표한 경우 `voted_options_seq`, 각 선택지의 `vote_count`, `is_selected`가 함께 반환됩니다.
+    본인이 해당 질문에 투표한 경우 `selected_option_seq`, 각 선택지의 `vote_count`가 함께 반환됩니다.
 
     **Response**
     - `200`: 조회 성공

@@ -22,9 +22,10 @@ class GetQuestionResponse(BaseModel):
     status: str
     active: bool
     version: int
+    is_creator: bool
     created_at: datetime
     updated_at: datetime
-    voted_options_seq: int | None = None
+    selected_option_seq: int | None = None
     options: list[GetOptionResponse]
 
     @classmethod
@@ -32,7 +33,8 @@ class GetQuestionResponse(BaseModel):
             cls,
             question: "Question",
             options: list["Options"],
-            voted_options_seq: int | None = None,
+            is_creator: bool,
+            selected_option_seq: int | None = None,
             vote_counts: dict[int, int] | None = None,
     ) -> "GetQuestionResponse":
         return cls(
@@ -43,14 +45,14 @@ class GetQuestionResponse(BaseModel):
             status=question.status,
             active=question.active,
             version=question.version,
+            is_creator=is_creator,
             created_at=question.created_at,
             updated_at=question.updated_at,
-            voted_options_seq=voted_options_seq,
+            selected_option_seq=selected_option_seq,
             options=[
                 GetOptionResponse.from_entity(
                     option,
                     vote_count=vote_counts.get(option.options_seq) if vote_counts else None,
-                    is_selected=option.options_seq == voted_options_seq if voted_options_seq is not None else None,
                 )
                 for option in options
             ],
@@ -60,13 +62,14 @@ class GetQuestionResponse(BaseModel):
     def from_detail_rows(
             cls,
             question: "Question",
-            option_rows: list[tuple["Options", int, bool]],
+            option_rows: list[tuple["Options", int, int | None]],
+            users_seq: int,
     ) -> "GetQuestionResponse":
-        voted_options_seq = next(
+        selected_option_seq = next(
             (
-                option.options_seq
-                for option, _, is_selected in option_rows
-                if is_selected
+                option_seq
+                for _, _, option_seq in option_rows
+                if option_seq is not None
             ),
             None,
         )
@@ -79,15 +82,15 @@ class GetQuestionResponse(BaseModel):
             status=question.status,
             active=question.active,
             version=question.version,
+            is_creator=question.users_seq == users_seq,
             created_at=question.created_at,
             updated_at=question.updated_at,
-            voted_options_seq=voted_options_seq,
+            selected_option_seq=selected_option_seq,
             options=[
                 GetOptionResponse.from_entity(
                     option,
                     vote_count=vote_count,
-                    is_selected=is_selected,
                 )
-                for option, vote_count, is_selected in option_rows
+                for option, vote_count, _ in option_rows
             ],
         )
