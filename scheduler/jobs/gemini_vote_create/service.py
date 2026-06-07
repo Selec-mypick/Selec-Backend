@@ -2,24 +2,27 @@ import json
 import re
 from pathlib import Path
 
-from app.batch.client.gemini_client import GeminiClient
-from app.batch.schema.response.batch_response import GeminiPromptResponse
+from scheduler.client.gemini_client import GeminiClient
+from scheduler.jobs.gemini_vote_create.config import BATCH_USERS_SEQ
+from app.core.database.session import AsyncSessionLocal
 from app.core.exceptions import ServerException
+from app.question.schema.request.question_request import CreateQuestionRequest
+from app.question.service.question_service import create_question
 from config import settings
 
+PROMPT_PATH = Path(__file__).resolve().parent / "prompt.txt"
 
-async def generate_gemini_response() -> GeminiPromptResponse:
+
+async def create_question_from_gemini() -> None:
     model = settings.gemini_model
 
     if not model:
         raise ServerException("GEMINI_MODEL 환경변수가 설정되어 있지 않습니다.")
 
-    prompt_path = Path("app/batch/prompt/prompt.txt")
-
-    if not prompt_path.exists():
+    if not PROMPT_PATH.exists():
         raise ServerException("Gemini 프롬프트 파일을 찾을 수 없습니다.")
 
-    prompt = prompt_path.read_text(encoding="utf-8").strip()
+    prompt = PROMPT_PATH.read_text(encoding="utf-8").strip()
 
     if not prompt:
         raise ServerException("Gemini 프롬프트 파일이 비어 있습니다.")
@@ -79,10 +82,12 @@ async def generate_gemini_response() -> GeminiPromptResponse:
     if len(set(options)) != len(options):
         raise ServerException("Gemini 응답의 options에 중복 값이 있습니다.")
 
-    return GeminiPromptResponse(
-        model=model,
+    request = CreateQuestionRequest(
         title=title.strip(),
         description=description.strip(),
         is_anonymous=True,
         options=[option.strip() for option in options],
     )
+
+    async with AsyncSessionLocal() as db:
+        await create_question(request, BATCH_USERS_SEQ, db)

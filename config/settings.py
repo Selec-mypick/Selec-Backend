@@ -101,6 +101,10 @@ class Settings:
         return self.get_env('GEMINI_API_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta')
 
     @property
+    def scheduler_enabled(self) -> bool:
+        return self.get_env('SCHEDULER_ENABLED', 'true').lower() in ('true', '1', 'yes')
+
+    @property
     def cors_origins(self) -> list[str]:
         """CORS 허용 origin 목록. 쉼표로 구분된 문자열을 리스트로 변환"""
         origins_str = self.get_env('CORS_ORIGINS', '*')

@@ -8,7 +8,7 @@ from config import settings
 from app.core.exceptions import setup_exception_handlers
 from app.core.middleware import JWTAuthMiddleware
 from app.auth.routers.auth_router import router as auth_router
-from app.batch.routers.batch_router import router as batch_router
+from scheduler import shutdown_scheduler, start_scheduler
 from app.question.routers.question_router import router as question_router
 from app.users.routers.users_router import router as users_router
 from app.vote.routers.vote_router import router as vote_router
@@ -51,7 +51,6 @@ def create_app() -> FastAPI:
         allow_paths=(
             "/api/auth/**",
             "/actuator/**",
-            "/batch/**",
         ),
     )
 
@@ -61,7 +60,6 @@ def create_app() -> FastAPI:
     app.include_router(users_router)
     app.include_router(question_router)
     app.include_router(vote_router)
-    app.include_router(batch_router)
 
     @app.get(
         "/actuator/health",
@@ -102,16 +100,20 @@ def create_app() -> FastAPI:
                 extra={"error": str(e)},
             )
 
+        start_scheduler()
+
         logger.info(
             "Selec Backend started",
             extra={
                 "debug": settings.debug,
                 "log_level": settings.log_level,
+                "scheduler_enabled": settings.scheduler_enabled,
             },
         )
 
     @app.on_event("shutdown")
     async def shutdown_event():
+        shutdown_scheduler()
         await RedisClient.close()
         logger.info("Redis connection closed")
 
