@@ -15,14 +15,12 @@ router = APIRouter(prefix="/api/batch", tags=["BATCH"])
     status_code=status.HTTP_200_OK,
     responses=AUTHENTICATED_RESPONSES,
 )
-async def generate_gemini_response_endpoint(request: GeminiPromptRequest | None = None):
+async def generate_gemini_response_endpoint():
     """
-    Gemini 프롬프트 실행
+    Gemini 투표 생성
 
-    전달받은 프롬프트를 Gemini API로 전송하고 생성된 텍스트를 반환합니다.
+    서버에 저장된 프롬프트 파일과 환경변수의 Gemini 모델을 사용해
+    투표 생성 결과를 반환합니다.
     """
-    if request is None:
-        request = GeminiPromptRequest()
-
-    result = await generate_gemini_response(request)
+    result = await generate_gemini_response()
     return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)

@@ -1,14 +1,18 @@
+import json
+import re
 from pathlib import Path
 
 from app.batch.client.gemini_client import GeminiClient
-from app.batch.schema.request.batch_request import GeminiPromptRequest
 from app.batch.schema.response.batch_response import GeminiPromptResponse
 from app.core.exceptions import ServerException
 from config import settings
 
 
-async def generate_gemini_response(request: GeminiPromptRequest) -> GeminiPromptResponse:
-    model = request.model or settings.gemini_model
+async def generate_gemini_response() -> GeminiPromptResponse:
+    model = settings.gemini_model
+
+    if not model:
+        raise ServerException("GEMINI_MODEL 환경변수가 설정되어 있지 않습니다.")
 
     prompt_path = Path("app/batch/prompt/prompt.txt")
 
@@ -16,6 +20,9 @@ async def generate_gemini_response(request: GeminiPromptRequest) -> GeminiPrompt
         raise ServerException("Gemini 프롬프트 파일을 찾을 수 없습니다.")
 
     prompt = prompt_path.read_text(encoding="utf-8").strip()
+
+    if not prompt:
+        raise ServerException("Gemini 프롬프트 파일이 비어 있습니다.")
 
     data = await GeminiClient.generate_content(prompt, model)
 
@@ -35,7 +42,47 @@ async def generate_gemini_response(request: GeminiPromptRequest) -> GeminiPrompt
 
     text = "".join(texts).strip()
 
+    # Gemini가 ```json ... ``` 코드블록으로 감싸는 경우 제거
+    text = re.sub(r"^```json\s*", "", text)
+    text = re.sub(r"^```\s*", "", text)
+    text = re.sub(r"\s*```$", "", text)
+    text = text.strip()
+
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        raise ServerException(f"Gemini 응답이 JSON 형식이 아닙니다. 응답값: {text}")
+
+    title = parsed.get("title")
+    description = parsed.get("description")
+    is_anonymous = parsed.get("is_anonymous")
+    options = parsed.get("options")
+
+    if not isinstance(title, str) or not title.strip():
+        raise ServerException("Gemini 응답의 title 값이 올바르지 않습니다.")
+
+    if not isinstance(description, str) or not description.strip():
+        raise ServerException("Gemini 응답의 description 값이 올바르지 않습니다.")
+
+    if is_anonymous is not True:
+        raise ServerException("Gemini 응답의 is_anonymous 값은 true여야 합니다.")
+
+    if not isinstance(options, list):
+        raise ServerException("Gemini 응답의 options 값이 배열이 아닙니다.")
+
+    if len(options) < 3 or len(options) > 5:
+        raise ServerException("Gemini 응답의 options 개수는 3개 이상 5개 이하이어야 합니다.")
+
+    if any(not isinstance(option, str) or not option.strip() for option in options):
+        raise ServerException("Gemini 응답의 options 항목이 올바르지 않습니다.")
+
+    if len(set(options)) != len(options):
+        raise ServerException("Gemini 응답의 options에 중복 값이 있습니다.")
+
     return GeminiPromptResponse(
         model=model,
-        text=text,
+        title=title.strip(),
+        description=description.strip(),
+        is_anonymous=True,
+        options=[option.strip() for option in options],
     )
