@@ -9,7 +9,7 @@ from app.users.dependency.jwt_users import get_jwt_users
 from app.users.schema.dto.jwt_users import JwtUsers
 from app.users.schema.request.users_request import UpdateMyInfoRequest
 from app.users.schema.response.users_response import GetMyInfoResponse
-from app.users.services.user_service import get_my_info, update_my_info
+from app.users.service.user_service import get_my_info, update_my_info
 
 router = APIRouter(prefix="/api/users", tags=["USERS"])
 
