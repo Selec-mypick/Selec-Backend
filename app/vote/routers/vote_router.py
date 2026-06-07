@@ -14,13 +14,14 @@ router = APIRouter(prefix="/api/vote", tags=["VOTE"])
 
 
 @router.post(
-    "",
+    "/{question_seq}",
     response_model=BaseResponse[dict],
     status_code=status.HTTP_201_CREATED,
     responses=VOTE_RESPONSES,
 )
 async def create_vote_endpoint(
         request: CreateVoteRequest,
+        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
         jwt_users: JwtUsers = Depends(get_jwt_users),
         db: AsyncSession = Depends(get_db),
 ):
@@ -36,7 +37,7 @@ async def create_vote_endpoint(
     - `404`: 존재하지 않는 질문
     - `500`: 서버 오류
     """
-    await create_vote(request, jwt_users.users_seq, db)
+    await create_vote(question_seq, request, jwt_users.users_seq, db)
     return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS)
 
 

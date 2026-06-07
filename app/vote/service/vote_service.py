@@ -7,14 +7,14 @@ from app.vote.repository.vote_repository import VoteRepository
 from app.vote.schema.request.vote_request import CreateVoteRequest
 
 
-async def create_vote(request: CreateVoteRequest, users_seq: str, db: AsyncSession) -> None:
-    question = await QuestionRepository.find_by_question_seq(db, request.question_seq)
+async def create_vote(question_seq: int, request: CreateVoteRequest, users_seq: str, db: AsyncSession) -> None:
+    question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
         raise NotFoundException("존재하지 않는 질문입니다.")
     if question.status != 'OPEN':
         raise BadRequestException("이미 종료된 투표입니다.")
 
-    options = await OptionsRepository.find_all_by_question_seq(db, request.question_seq)
+    options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
     option_seqs = {option.options_seq for option in options}
     if request.options_seq not in option_seqs:
         raise BadRequestException("질문에 속하지 않는 선택지입니다.")
@@ -23,7 +23,7 @@ async def create_vote(request: CreateVoteRequest, users_seq: str, db: AsyncSessi
         await VoteRepository.upsert(
             db=db,
             users_seq=users_seq,
-            question_seq=request.question_seq,
+            question_seq=question_seq,
             options_seq=request.options_seq,
         )
         await db.commit()
