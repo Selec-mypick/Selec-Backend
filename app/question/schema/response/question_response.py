@@ -3,8 +3,6 @@ from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel
 
-from app.options.schema.response.options_response import GetOptionResponse
-
 if TYPE_CHECKING:
     from app.options.models.options import Options
     from app.question.models.question import Question
@@ -13,6 +11,10 @@ if TYPE_CHECKING:
 
 class CreateQuestionResponse(BaseModel):
     question_seq: int
+
+
+class UpdateQuestionResponse(BaseModel):
+    version: int
 
 
 class GetQuestionResponse(BaseModel):
@@ -26,7 +28,7 @@ class GetQuestionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     selected_option_seq: int | None = None
-    options: list[GetOptionResponse]
+    options: list[dict]
 
     @classmethod
     def from_entity(
@@ -49,10 +51,18 @@ class GetQuestionResponse(BaseModel):
             updated_at=question.updated_at,
             selected_option_seq=selected_option_seq,
             options=[
-                GetOptionResponse.from_entity(
-                    option,
-                    vote_count=vote_counts.get(option.options_seq) if vote_counts else None,
-                )
+                {
+                    **{
+                        "options_seq": option.options_seq,
+                        "question_seq": option.question_seq,
+                        "content": option.content,
+                    },
+                    **(
+                        {"vote_count": vote_counts[option.options_seq]}
+                        if vote_counts and option.options_seq in vote_counts
+                        else {}
+                    ),
+                }
                 for option in options
             ],
         )
@@ -87,10 +97,14 @@ class GetQuestionResponse(BaseModel):
             updated_at=question.updated_at,
             selected_option_seq=selected_option_seq,
             options=[
-                GetOptionResponse.from_entity(
-                    option,
-                    vote_count=vote_count if can_view_vote_count else None,
-                )
+                {
+                    **{
+                        "options_seq": option.options_seq,
+                        "question_seq": option.question_seq,
+                        "content": option.content,
+                    },
+                    **({"vote_count": vote_count} if can_view_vote_count else {}),
+                }
                 for option, vote_count, _ in option_rows
             ],
         )

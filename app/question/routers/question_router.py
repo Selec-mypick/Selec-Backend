@@ -12,6 +12,7 @@ from app.question.schema.response.question_response import (
     CreateQuestionResponse,
     GetQuestionResponse,
     GetQuestionVoteResultResponse,
+    UpdateQuestionResponse,
 )
 from app.question.service.question_service import (
     create_question,
@@ -103,7 +104,7 @@ async def get_question_result_endpoint(
 
 @router.put(
     "/{question_seq}",
-    response_model=BaseResponse[GetQuestionResponse],
+    response_model=BaseResponse[UpdateQuestionResponse],
     responses=QUESTION_WRITE_RESPONSES,
 )
 async def update_question_endpoint(
