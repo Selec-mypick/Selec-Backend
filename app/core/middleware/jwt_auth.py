@@ -1,10 +1,11 @@
 from typing import Iterable
+
 from fastapi.responses import JSONResponse
 from jose import jwt
 from app.base.response import BaseResponse
-from app.users.dependency.dependency import SECRET_KEY, ALGORITHM
 from app.core.exceptions import UnauthorizedException
 from app.core.cache import RedisClient
+from config import settings
 
 
 class JWTAuthMiddleware:
@@ -37,7 +38,7 @@ class JWTAuthMiddleware:
 
             token = auth_header[7:].strip()
             try:
-                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+                payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
             except jwt.ExpiredSignatureError:
                 raise UnauthorizedException("토큰이 만료되었습니다. 토큰을 재발급해주세요.")
             except jwt.JWTError as e:

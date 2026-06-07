@@ -3,6 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.options.models.options import Options
 from app.question.models.question import Question
+from app.question.repository.dto.question_repository_dto import (
+    QuestionDetailDTO,
+    QuestionOptionDetailRow,
+    VoteResultOptionRow,
+)
 from app.users.models.users import Users
 from app.vote.models.vote import Vote
 
@@ -30,7 +35,7 @@ class QuestionRepository:
             db: AsyncSession,
             question_seq: int,
             users_seq: str,
-    ) -> tuple[Question, list[tuple[Options, int, int | None]]] | None:
+    ) -> QuestionDetailDTO | None:
         vote_count_subquery = (
             select(
                 Vote.options_seq.label("options_seq"),
@@ -88,17 +93,22 @@ class QuestionRepository:
             return None
 
         question = rows[0][0]
-        return question, [
-            (option, vote_count, selected_option_seq)
+        option_rows = [
+            QuestionOptionDetailRow(
+                option=option,
+                vote_count=vote_count,
+                selected_option_seq=selected_option_seq,
+            )
             for _, option, vote_count, selected_option_seq in rows
             if option is not None
         ]
+        return QuestionDetailDTO(question=question, option_rows=option_rows)
 
     @staticmethod
     async def find_result_options_by_question_seq(
             db: AsyncSession,
             question_seq: int,
-    ) -> list[tuple[Options, Users | None]]:
+    ) -> list[VoteResultOptionRow]:
         result = await db.execute(
             select(Options, Users)
             .outerjoin(
@@ -122,4 +132,7 @@ class QuestionRepository:
             )
             .order_by(Options.options_seq.asc(), Vote.vote_seq.asc())
         )
-        return result.all()
+        return [
+            VoteResultOptionRow(option=option, voter=voter)
+            for option, voter in result.all()
+        ]

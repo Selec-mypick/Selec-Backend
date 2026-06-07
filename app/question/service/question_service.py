@@ -1,9 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm.exc import StaleDataError
 
-from app.core.exceptions import ServerException, BadRequestException, NotFoundException, ConflictException, ForbiddenException
+from app.core.database.transaction import run_in_transaction
+from app.core.exceptions import BadRequestException, ConflictException, ForbiddenException, NotFoundException
 from app.options.models.options import Options
 from app.options.repository.options_repository import OptionsRepository
+from app.question.constants.question_status import QuestionStatus
 from app.question.models.question import Question
 from app.question.repository.question_repository import QuestionRepository
 from app.question.schema.request.question_request import CreateQuestionRequest, UpdateQuestionRequest
@@ -16,30 +17,26 @@ from app.vote.repository.vote_repository import VoteRepository
 
 
 async def create_question(request: CreateQuestionRequest, users_seq: str, db: AsyncSession) -> CreateQuestionResponse:
-    new_question = Question(
-        users_seq=users_seq,
-        title=request.title,
-        description=request.description or None,
-        is_anonymous=request.is_anonymous,
-        status='OPEN',
-        active=True,
-        created_by=users_seq,
-        updated_by=users_seq,
-    )
-
-    try:
+    async def create_question_action() -> CreateQuestionResponse:
+        new_question = Question(
+            users_seq=users_seq,
+            title=request.title,
+            description=request.description or None,
+            is_anonymous=request.is_anonymous,
+            status=QuestionStatus.OPEN.value,
+            active=True,
+            created_by=users_seq,
+            updated_by=users_seq,
+        )
         saved_question = await QuestionRepository.save(db, new_question)
         options = [
             Options.create(saved_question.question_seq, option, users_seq)
             for option in request.options
         ]
         await OptionsRepository.save_all(db, options)
-        await db.commit()
-    except Exception as e:
-        await db.rollback()
-        raise ServerException(f"질문 생성 중 오류가 발생했습니다: {str(e)}")
+        return CreateQuestionResponse(question_seq=saved_question.question_seq)
 
-    return CreateQuestionResponse(question_seq=saved_question.question_seq)
+    return await run_in_transaction(db, create_question_action, "질문 생성 중 오류가 발생했습니다")
 
 
 async def get_question(question_seq: int, users_seq: str, db: AsyncSession) -> GetQuestionResponse:
@@ -47,8 +44,7 @@ async def get_question(question_seq: int, users_seq: str, db: AsyncSession) -> G
     if question_detail is None:
         raise NotFoundException("존재하지 않는 질문입니다.")
 
-    question, option_rows = question_detail
-    return GetQuestionResponse.from_detail_rows(question, option_rows, users_seq)
+    return GetQuestionResponse.from_detail_dto(question_detail, users_seq)
 
 
 async def update_question(
@@ -64,7 +60,7 @@ async def update_question(
         raise ForbiddenException("질문 수정 권한이 없습니다.")
     if question.version != request.version:
         raise ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
-    if question.status != 'OPEN':
+    if question.status != QuestionStatus.OPEN.value:
         raise BadRequestException("이미 종료된 투표입니다.")
 
     existing_options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
@@ -100,7 +96,9 @@ async def update_question(
     if await VoteRepository.exists_active_by_question_seq_and_options_seqs(db, question_seq, change_option_seqs):
         raise BadRequestException("이미 투표가 존재하는 선택지는 수정할 수 없습니다.")
 
-    try:
+    stale_exception = ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
+
+    async def update_question_action() -> UpdateQuestionResponse:
         question.update(
             title=request.title,
             description=request.description,
@@ -118,16 +116,16 @@ async def update_question(
         if insert_options:
             await OptionsRepository.save_all(db, insert_options)
 
-        await db.commit()
+        await db.flush()
         await db.refresh(question)
-    except StaleDataError:
-        await db.rollback()
-        raise ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
-    except Exception as e:
-        await db.rollback()
-        raise ServerException(f"질문 수정 중 오류가 발생했습니다: {str(e)}")
+        return UpdateQuestionResponse(version=question.version)
 
-    return UpdateQuestionResponse(version=question.version)
+    return await run_in_transaction(
+        db,
+        update_question_action,
+        "질문 수정 중 오류가 발생했습니다",
+        stale_exception=stale_exception,
+    )
 
 
 async def delete_question(question_seq: int, users_seq: str, db: AsyncSession) -> None:
@@ -137,15 +135,16 @@ async def delete_question(question_seq: int, users_seq: str, db: AsyncSession) -
     if question.users_seq != users_seq:
         raise ForbiddenException("질문 삭제 권한이 없습니다.")
 
-    try:
+    stale_exception = ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
+
+    async def delete_question_action() -> None:
         question.deactivate(users_seq)
         await OptionsRepository.deactivate_by_question_seq(db, question_seq, users_seq)
         await VoteRepository.deactivate_by_question_seq(db, question_seq, users_seq)
 
-        await db.commit()
-    except StaleDataError:
-        await db.rollback()
-        raise ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
-    except Exception as e:
-        await db.rollback()
-        raise ServerException(f"질문 삭제 중 오류가 발생했습니다: {str(e)}")
+    await run_in_transaction(
+        db,
+        delete_question_action,
+        "질문 삭제 중 오류가 발생했습니다",
+        stale_exception=stale_exception,
+    )

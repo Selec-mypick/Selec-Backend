@@ -105,6 +105,42 @@ class Settings:
         return self.get_env('SCHEDULER_ENABLED', 'true').lower() in ('true', '1', 'yes')
 
     @property
+    def secret_key(self) -> str:
+        secret_key = self.get_env('SECRET_KEY')
+        if not secret_key:
+            raise ValueError(f"SECRET_KEY가 설정되지 않았습니다. ({self.active_profile} 환경)")
+        return secret_key
+
+    @property
+    def jwt_algorithm(self) -> str:
+        algorithm = self.get_env('JWT_ALGORITHM')
+        if not algorithm:
+            raise ValueError(f"JWT_ALGORITHM이 설정되지 않았습니다. ({self.active_profile} 환경)")
+        return algorithm
+
+    @property
+    def access_token_expire_minutes(self) -> int:
+        minutes = self.get_env('ACCESS_TOKEN_EXPIRE_MINUTES')
+        if not minutes:
+            raise ValueError(f"ACCESS_TOKEN_EXPIRE_MINUTES가 설정되지 않았습니다. ({self.active_profile} 환경)")
+        return int(minutes)
+
+    @property
+    def refresh_token_expire_days(self) -> int:
+        days = self.get_env('REFRESH_TOKEN_EXPIRE_DAYS')
+        if not days:
+            raise ValueError(f"REFRESH_TOKEN_EXPIRE_DAYS가 설정되지 않았습니다. ({self.active_profile} 환경)")
+        return int(days)
+
+    @property
+    def access_token_ttl_seconds(self) -> int:
+        return self.access_token_expire_minutes * 60
+
+    @property
+    def refresh_token_ttl_seconds(self) -> int:
+        return self.refresh_token_expire_days * 24 * 60 * 60
+
+    @property
     def cors_origins(self) -> list[str]:
         """CORS 허용 origin 목록. 쉼표로 구분된 문자열을 리스트로 변환"""
         origins_str = self.get_env('CORS_ORIGINS', '*')

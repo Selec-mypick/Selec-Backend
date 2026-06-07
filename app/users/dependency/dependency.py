@@ -1,6 +1,6 @@
 from config import settings
 
-SECRET_KEY = settings.get_env("SECRET_KEY")
-ALGORITHM = settings.get_env("JWT_ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(settings.get_env("ACCESS_TOKEN_EXPIRE_MINUTES"))
-REFRESH_TOKEN_EXPIRE_DAYS = int(settings.get_env("REFRESH_TOKEN_EXPIRE_DAYS"))
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.jwt_algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
+REFRESH_TOKEN_EXPIRE_DAYS = settings.refresh_token_expire_days
