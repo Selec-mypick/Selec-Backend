@@ -34,4 +34,9 @@ async def update_my_info(
         await db.refresh(users)
         return GetMyInfoResponse.from_entity(users)
 
-    return await run_in_transaction(db, update_my_info_action, "회원 정보 수정 중 오류가 발생했습니다")
+    return await run_in_transaction(
+        db,
+        update_my_info_action,
+        "회원 정보 수정 중 오류가 발생했습니다",
+        integrity_exception=ConflictException("이미 사용 중인 닉네임입니다."),
+    )

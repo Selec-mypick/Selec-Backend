@@ -2,6 +2,7 @@ from jose import jwt, JWTError
 
 from app.auth.domain.token_domain import create_access_token, create_refresh_token
 from app.auth.schema.response.auth_response import AuthTokenResponse
+from app.auth.service.token_scripts import ROTATE_ACCESS_TOKEN_SCRIPT
 from app.core.cache import RedisClient
 from app.core.exceptions import ServerException, UnauthorizedException
 from config import settings
@@ -38,14 +39,15 @@ class AuthTokenIssuer:
             return
 
         black_key = f"auth:black:{users_seq}"
-        previous_token = await redis_client.get(white_key)
-        pipe = redis_client.pipeline()
-
-        if previous_token is not None:
-            pipe.set(black_key, previous_token, ex=settings.refresh_token_ttl_seconds)
-
-        pipe.set(white_key, access_token, ex=settings.access_token_ttl_seconds)
-        await pipe.execute()
+        await redis_client.eval(
+            ROTATE_ACCESS_TOKEN_SCRIPT,
+            2,
+            white_key,
+            black_key,
+            access_token,
+            settings.access_token_ttl_seconds,
+            settings.refresh_token_ttl_seconds,
+        )
 
     def decode_refresh_token(self, refresh_token: str) -> str:
         try:

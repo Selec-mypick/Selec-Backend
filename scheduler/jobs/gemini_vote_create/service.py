@@ -2,8 +2,11 @@ import json
 import re
 from pathlib import Path
 
+import logging
+
 from pydantic import ValidationError
 
+from app.core.cache.redis_lock import RedisLock
 from app.core.database.session import AsyncSessionLocal
 from app.core.exceptions import ServerException
 from app.question.schema.request.question_request import CreateQuestionRequest
@@ -12,7 +15,10 @@ from config import settings
 from scheduler.client.gemini_client import GeminiClient
 from scheduler.jobs.gemini_vote_create.config import BATCH_USERS_SEQ
 
+logger = logging.getLogger(__name__)
 PROMPT_PATH = Path(__file__).resolve().parent / "prompt.txt"
+SCHEDULER_LOCK_KEY = "scheduler:lock:gemini_vote_create"
+SCHEDULER_LOCK_TTL_SECONDS = 600
 
 
 class GeminiVoteCreateJob:
@@ -29,15 +35,20 @@ class GeminiVoteCreateJob:
         self.model = model or settings.gemini_model
 
     async def execute(self) -> None:
-        if not self.model:
-            raise ServerException("GEMINI_MODEL 환경변수가 설정되어 있지 않습니다.")
+        async with RedisLock.hold(SCHEDULER_LOCK_KEY, ttl_seconds=SCHEDULER_LOCK_TTL_SECONDS) as acquired:
+            if not acquired:
+                logger.info("Gemini vote create job skipped because another instance is running")
+                return
 
-        prompt = self.read_prompt()
-        response = await GeminiClient.generate_content(prompt, self.model)
-        request = self.to_create_question_request(response)
+            if not self.model:
+                raise ServerException("GEMINI_MODEL 환경변수가 설정되어 있지 않습니다.")
 
-        async with AsyncSessionLocal() as db:
-            await create_question(request, users_seq=self.users_seq, db=db)
+            prompt = self.read_prompt()
+            response = await GeminiClient.generate_content(prompt, self.model)
+            request = self.to_create_question_request(response)
+
+            async with AsyncSessionLocal() as db:
+                await create_question(request, users_seq=self.users_seq, db=db)
 
     def read_prompt(self) -> str:
         if not self.prompt_path.exists():

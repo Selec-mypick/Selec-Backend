@@ -31,6 +31,18 @@ class QuestionRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def find_by_question_seq_for_update(db: AsyncSession, question_seq: int) -> Question | None:
+        result = await db.execute(
+            select(Question)
+            .where(
+                Question.question_seq == question_seq,
+                Question.active.is_(True),
+            )
+            .with_for_update()
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def find_detail_by_question_seq(
             db: AsyncSession,
             question_seq: int,

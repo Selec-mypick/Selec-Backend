@@ -7,7 +7,7 @@ from app.auth.schema.request.auth_request import GoogleOAuthRequest, IssueTestTo
 from app.auth.schema.response.auth_response import AuthTokenResponse, CreateTestUserResponse
 from app.auth.service.token_service import auth_token_issuer
 from app.core.database.transaction import run_in_transaction
-from app.core.exceptions import BadRequestException, ServerException, UnauthorizedException
+from app.core.exceptions import BadRequestException, ConflictException, UnauthorizedException
 from app.users.repository.users_repository import UsersRepository
 from app.users.models.users import Users
 
@@ -29,7 +29,7 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
     if not google_id:
         raise BadRequestException("Google 사용자 정보를 확인할 수 없습니다.")
 
-    async def authenticate_and_issue() -> AuthTokenResponse:
+    async def upsert_google_user() -> str:
         users = await UsersRepository.upsert_by_google(
             db=db,
             google_id=google_id,
@@ -37,13 +37,15 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
             name=google_user.get("name"),
             profile_image=google_user.get("picture"),
         )
-        return await auth_token_issuer.issue(users.users_seq)
+        return users.users_seq
 
-    return await run_in_transaction(
+    users_seq = await run_in_transaction(
         db,
-        authenticate_and_issue,
+        upsert_google_user,
         "Google OAuth 로그인 처리 중 오류가 발생했습니다",
+        integrity_exception=ConflictException("Google 계정 등록 중 충돌이 발생했습니다. 다시 시도해주세요."),
     )
+    return await auth_token_issuer.issue(users_seq)
 
 
 async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
@@ -51,7 +53,7 @@ async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
     google_id = f"test_{test_uuid[:12]}"
     nick_name = f"test_{test_uuid[:12]}"
 
-    async def create_test_user_action() -> CreateTestUserResponse:
+    async def save_test_user() -> Users:
         users = Users.create_from_google(
             google_id=google_id,
             email=f"{google_id}@test.local",
@@ -59,22 +61,27 @@ async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
             profile_image=None,
         )
         users.nick_name = nick_name
-        users = await UsersRepository.save(db, users)
-        tokens = await auth_token_issuer.issue(users.users_seq, rotate_previous=False)
+        return await UsersRepository.save(db, users)
 
-        return CreateTestUserResponse(
-            users_seq=users.users_seq,
-            google_id=users.google_id,
-            nick_name=users.nick_name,
-            email=users.email,
-            name=users.name,
-            profile_image=users.profile_image,
-            access_token=tokens.access_token,
-            refresh_token=tokens.refresh_token,
-            expires_in=tokens.expires_in,
-        )
+    users = await run_in_transaction(
+        db,
+        save_test_user,
+        "테스트 유저 생성 중 오류가 발생했습니다",
+        integrity_exception=ConflictException("테스트 유저 생성 중 충돌이 발생했습니다."),
+    )
+    tokens = await auth_token_issuer.issue(users.users_seq, rotate_previous=False)
 
-    return await run_in_transaction(db, create_test_user_action, "테스트 유저 생성 중 오류가 발생했습니다")
+    return CreateTestUserResponse(
+        users_seq=users.users_seq,
+        google_id=users.google_id,
+        nick_name=users.nick_name,
+        email=users.email,
+        name=users.name,
+        profile_image=users.profile_image,
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
+        expires_in=tokens.expires_in,
+    )
 
 
 async def issue_test_token(request: IssueTestTokenRequest, db: AsyncSession) -> AuthTokenResponse:

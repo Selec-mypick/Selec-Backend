@@ -53,52 +53,52 @@ async def update_question(
         users_seq: str,
         db: AsyncSession,
 ) -> UpdateQuestionResponse:
-    question = await QuestionRepository.find_by_question_seq(db, question_seq)
-    if question is None:
-        raise NotFoundException("존재하지 않는 질문입니다.")
-    if question.users_seq != users_seq:
-        raise ForbiddenException("질문 수정 권한이 없습니다.")
-    if question.version != request.version:
-        raise ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
-    if question.status != QuestionStatus.OPEN.value:
-        raise BadRequestException("이미 종료된 투표입니다.")
-
-    existing_options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
-    existing_options_by_seq = {
-        option.options_seq: option
-        for option in existing_options
-    }
-
-    update_option_requests = []
-    insert_options = []
-    update_option_seqs = set()
-
-    for option in request.options:
-        if option.options_seq is None:
-            insert_options.append(Options.create(question_seq, option.content, users_seq))
-            continue
-
-        if option.options_seq in update_option_seqs:
-            raise BadRequestException("중복된 선택지 시퀀스가 포함되어 있습니다.")
-
-        update_option_seqs.add(option.options_seq)
-        update_option_requests.append(option)
-
-    if not update_option_seqs.issubset(existing_options_by_seq):
-        raise BadRequestException("질문에 속하지 않는 선택지입니다.")
-
-    delete_option_seqs = existing_options_by_seq.keys() - update_option_seqs
-    change_option_seqs = {
-        option.options_seq
-        for option in update_option_requests
-        if existing_options_by_seq[option.options_seq].content != option.content
-    }
-    if await VoteRepository.exists_active_by_question_seq_and_options_seqs(db, question_seq, change_option_seqs):
-        raise BadRequestException("이미 투표가 존재하는 선택지는 수정할 수 없습니다.")
-
     stale_exception = ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
 
     async def update_question_action() -> UpdateQuestionResponse:
+        question = await QuestionRepository.find_by_question_seq_for_update(db, question_seq)
+        if question is None:
+            raise NotFoundException("존재하지 않는 질문입니다.")
+        if question.users_seq != users_seq:
+            raise ForbiddenException("질문 수정 권한이 없습니다.")
+        if question.version != request.version:
+            raise ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
+        if question.status != QuestionStatus.OPEN.value:
+            raise BadRequestException("이미 종료된 투표입니다.")
+
+        existing_options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
+        existing_options_by_seq = {
+            option.options_seq: option
+            for option in existing_options
+        }
+
+        update_option_requests = []
+        insert_options = []
+        update_option_seqs = set()
+
+        for option in request.options:
+            if option.options_seq is None:
+                insert_options.append(Options.create(question_seq, option.content, users_seq))
+                continue
+
+            if option.options_seq in update_option_seqs:
+                raise BadRequestException("중복된 선택지 시퀀스가 포함되어 있습니다.")
+
+            update_option_seqs.add(option.options_seq)
+            update_option_requests.append(option)
+
+        if not update_option_seqs.issubset(existing_options_by_seq):
+            raise BadRequestException("질문에 속하지 않는 선택지입니다.")
+
+        delete_option_seqs = existing_options_by_seq.keys() - update_option_seqs
+        change_option_seqs = {
+            option.options_seq
+            for option in update_option_requests
+            if existing_options_by_seq[option.options_seq].content != option.content
+        }
+        if await VoteRepository.exists_active_by_question_seq_and_options_seqs(db, question_seq, change_option_seqs):
+            raise BadRequestException("이미 투표가 존재하는 선택지는 수정할 수 없습니다.")
+
         question.update(
             title=request.title,
             description=request.description,
@@ -129,15 +129,15 @@ async def update_question(
 
 
 async def delete_question(question_seq: int, users_seq: str, db: AsyncSession) -> None:
-    question = await QuestionRepository.find_by_question_seq(db, question_seq)
-    if question is None:
-        raise NotFoundException("존재하지 않는 질문입니다.")
-    if question.users_seq != users_seq:
-        raise ForbiddenException("질문 삭제 권한이 없습니다.")
-
     stale_exception = ConflictException("이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
 
     async def delete_question_action() -> None:
+        question = await QuestionRepository.find_by_question_seq_for_update(db, question_seq)
+        if question is None:
+            raise NotFoundException("존재하지 않는 질문입니다.")
+        if question.users_seq != users_seq:
+            raise ForbiddenException("질문 삭제 권한이 없습니다.")
+
         question.deactivate(users_seq)
         await OptionsRepository.deactivate_by_question_seq(db, question_seq, users_seq)
         await VoteRepository.deactivate_by_question_seq(db, question_seq, users_seq)
