@@ -1,7 +1,7 @@
 import redis.asyncio as redis
 from typing import Optional
 from config import settings
-from app.core.exceptions import ServerException
+from app.core.exceptions import ErrorCode, ServerException
 
 
 class RedisClient:
@@ -19,7 +19,7 @@ class RedisClient:
                 cls._instance = await redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
                 await cls._instance.ping()
             except Exception as e:
-                raise ServerException(f"Redis 연결 실패: {str(e)}")
+                raise ServerException(ErrorCode.REDIS_CONNECTION_FAILED, message=f"{ErrorCode.REDIS_CONNECTION_FAILED.message}: {str(e)}")
         return cls._instance
 
     @classmethod

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.base.constants import BaseUtil
 from app.base.response import BaseResponse
 from app.base.response import AUTHENTICATED_RESPONSES
 from app.core.database import get_db
@@ -29,7 +28,7 @@ async def get_my_info_endpoint(
     JWT 토큰으로 인증된 사용자의 기본 정보를 조회합니다.
     """
     result = await get_my_info(users_seq, db)
-    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
+    return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 
 @router.put(
@@ -49,4 +48,4 @@ async def update_my_info_endpoint(
     JWT 토큰으로 인증된 사용자의 닉네임을 수정합니다.
     """
     result = await update_my_info(users_seq, request, db)
-    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
+    return BaseResponse.of_success(status.HTTP_200_OK, result)

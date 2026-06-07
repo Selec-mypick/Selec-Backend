@@ -3,11 +3,12 @@ from pydantic import BaseModel, Field
 
 class ErrorResponse(BaseModel):
     status: int = Field(..., description="HTTP 상태 코드")
+    code: str = Field(..., description="에러 코드")
     message: str = Field(..., description="에러 메시지")
     data: None = Field(None, description="에러 응답 데이터")
 
 
-def _error(status: int, message: str, description: str) -> dict:
+def _error(status: int, code: str, message: str, description: str) -> dict:
     return {
         "description": description,
         "model": ErrorResponse,
@@ -15,6 +16,7 @@ def _error(status: int, message: str, description: str) -> dict:
             "application/json": {
                 "example": {
                     "status": status,
+                    "code": code,
                     "message": message,
                     "data": None,
                 }
@@ -23,13 +25,13 @@ def _error(status: int, message: str, description: str) -> dict:
     }
 
 
-ERROR_400 = _error(400, "잘못된 요청입니다.", "Bad Request")
-ERROR_401 = _error(401, "인증이 필요합니다.", "Unauthorized")
-ERROR_403 = _error(403, "접근 권한이 없습니다.", "Forbidden")
-ERROR_404 = _error(404, "리소스를 찾을 수 없습니다.", "Not Found")
-ERROR_409 = _error(409, "리소스 충돌이 발생했습니다.", "Conflict")
-ERROR_422 = _error(422, "요청 값이 올바르지 않습니다.", "Validation Error")
-ERROR_500 = _error(500, "내부 서버 오류가 발생했습니다.", "Internal Server Error")
+ERROR_400 = _error(400, "BAD_000", "잘못된 요청입니다.", "Bad Request")
+ERROR_401 = _error(401, "AUTH_000", "인증이 필요합니다.", "Unauthorized")
+ERROR_403 = _error(403, "FORB_000", "접근 권한이 없습니다.", "Forbidden")
+ERROR_404 = _error(404, "NTF_000", "리소스를 찾을 수 없습니다.", "Not Found")
+ERROR_409 = _error(409, "CNF_000", "리소스 충돌이 발생했습니다.", "Conflict")
+ERROR_422 = _error(422, "VAL_000", "요청 값이 올바르지 않습니다.", "Validation Error")
+ERROR_500 = _error(500, "SRV_000", "내부 서버 오류가 발생했습니다.", "Internal Server Error")
 
 AUTH_RESPONSES = {
     400: ERROR_400,

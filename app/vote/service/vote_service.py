@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database.transaction import run_in_transaction
-from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
+from app.core.exceptions import BadRequestException, ErrorCode, ForbiddenException, NotFoundException
 from app.options.repository.options_repository import OptionsRepository
 from app.question.constants.question_status import QuestionStatus
 from app.question.repository.question_repository import QuestionRepository
@@ -13,14 +13,14 @@ from app.vote.schema.response.vote_response import GetVoteResultResponse
 async def create_vote(question_seq: int, request: CreateVoteRequest, users_seq: str, db: AsyncSession) -> None:
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
-        raise NotFoundException("존재하지 않는 질문입니다.")
+        raise NotFoundException(ErrorCode.QUESTION_NOT_FOUND)
     if question.status != QuestionStatus.OPEN.value:
-        raise BadRequestException("이미 종료된 투표입니다.")
+        raise BadRequestException(ErrorCode.VOTE_ALREADY_CLOSED)
 
     options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
     option_seqs = {option.options_seq for option in options}
     if request.options_seq not in option_seqs:
-        raise BadRequestException("질문에 속하지 않는 선택지입니다.")
+        raise BadRequestException(ErrorCode.OPTION_NOT_IN_QUESTION)
 
     async def create_vote_action() -> None:
         await VoteRepository.upsert(
@@ -36,12 +36,12 @@ async def create_vote(question_seq: int, request: CreateVoteRequest, users_seq: 
 async def get_vote_result(question_seq: int, users_seq: str, db: AsyncSession) -> GetVoteResultResponse:
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
-        raise NotFoundException("존재하지 않는 질문입니다.")
+        raise NotFoundException(ErrorCode.QUESTION_NOT_FOUND)
 
     if not question.is_anonymous:
         is_creator = question.users_seq == users_seq
         if not is_creator and await VoteRepository.find_by_users_seq_and_question_seq(db, users_seq, question_seq) is None:
-            raise ForbiddenException("투표 후 결과를 조회할 수 있습니다.")
+            raise ForbiddenException(ErrorCode.VOTE_RESULT_FORBIDDEN)
 
     option_rows = await QuestionRepository.find_result_options_by_question_seq(db, question_seq)
     return GetVoteResultResponse.from_result_rows(option_rows, question.is_anonymous)
@@ -50,7 +50,7 @@ async def get_vote_result(question_seq: int, users_seq: str, db: AsyncSession) -
 async def delete_vote(question_seq: int, users_seq: str, db: AsyncSession) -> None:
     vote = await VoteRepository.find_by_users_seq_and_question_seq(db, users_seq, question_seq)
     if vote is None:
-        raise NotFoundException("투표 내역이 없습니다.")
+        raise NotFoundException(ErrorCode.VOTE_NOT_FOUND)
 
     async def delete_vote_action() -> None:
         vote.deactivate(users_seq)

@@ -1,3 +1,4 @@
+from app.core.exceptions.error_code import ErrorCode
 from app.core.exceptions.api_exception import (
     BadRequestException,
     BaseAPIException,
@@ -13,6 +14,7 @@ __all__ = [
     "BadRequestException",
     "BaseAPIException",
     "ConflictException",
+    "ErrorCode",
     "ForbiddenException",
     "NotFoundException",
     "ServerException",

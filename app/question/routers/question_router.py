@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.base.constants import BaseUtil
 from app.base.response import BaseResponse
 from app.base.response import AUTHENTICATED_RESPONSES, QUESTION_READ_RESPONSES, QUESTION_WRITE_RESPONSES
 from app.core.database import get_db
@@ -45,7 +44,7 @@ async def create_question_endpoint(
     - `500`: 서버 오류
     """
     result = await create_question(request, users_seq, db)
-    return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS, result)
+    return BaseResponse.of_success(status.HTTP_201_CREATED, result)
 
 
 @router.get(
@@ -70,7 +69,7 @@ async def get_question_endpoint(
     - `500`: 서버 오류
     """
     result = await get_question(question_seq, users_seq, db)
-    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
+    return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 
 @router.put(
@@ -96,7 +95,7 @@ async def update_question_endpoint(
     - `500`: 서버 오류
     """
     result = await update_question(question_seq, request, users_seq, db)
-    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
+    return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 
 @router.delete(
@@ -118,4 +117,4 @@ async def delete_question_endpoint(
     - `500`: 서버 오류
     """
     await delete_question(question_seq, users_seq, db)
-    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS)
+    return BaseResponse.of_success(status.HTTP_200_OK)

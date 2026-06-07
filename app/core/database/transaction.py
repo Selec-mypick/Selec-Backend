@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 
-from app.core.exceptions import BaseAPIException, ConflictException, ServerException
+from app.core.exceptions import BaseAPIException, ConflictException, ErrorCode, ServerException
 
 T = TypeVar("T")
 
@@ -31,10 +31,13 @@ async def run_in_transaction(
         await db.rollback()
         if integrity_exception is not None:
             raise integrity_exception
-        raise ConflictException("리소스 충돌이 발생했습니다.")
+        raise ConflictException(ErrorCode.RESOURCE_CONFLICT)
     except BaseAPIException:
         await db.rollback()
         raise
     except Exception as e:
         await db.rollback()
-        raise ServerException(f"{error_message}: {str(e)}")
+        raise ServerException(
+            ErrorCode.TRANSACTION_FAILED,
+            message=f"{error_message}: {str(e)}",
+        )

@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.schema.request.auth_request import GoogleOAuthRequest, IssueTestTokenRequest, RefreshTokenRequest
 from app.auth.schema.response.auth_response import AuthTokenResponse, CreateTestUserResponse
 from app.auth.service.auth_service import authenticate_google, create_test_user, issue_test_token, refresh_access_token
-from app.base.constants import BaseUtil
 from app.base.response import BaseResponse
 from app.base.response import AUTH_RESPONSES, REFRESH_TOKEN_RESPONSES
 from app.core.database import get_db
@@ -27,7 +26,7 @@ async def create_test_user_endpoint(
     Google OAuth 없이 실제 users row를 만들고 테스트용 JWT를 발급합니다.
     """
     result = await create_test_user(db)
-    return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS, result)
+    return BaseResponse.of_success(status.HTTP_201_CREATED, result)
 
 
 @router.post(
@@ -46,7 +45,7 @@ async def issue_test_token_endpoint(
     테스트용으로 users_seq를 전달받아 해당 사용자의 JWT를 발급합니다.
     """
     result = await issue_test_token(request, db)
-    return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS, result)
+    return BaseResponse.of_success(status.HTTP_201_CREATED, result)
 
 
 @router.post(
@@ -70,7 +69,7 @@ async def google_oauth_endpoint(
     - `500`: 서버 오류
     """
     result = await authenticate_google(request, db)
-    return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS, result)
+    return BaseResponse.of_success(status.HTTP_201_CREATED, result)
 
 
 @router.post(
@@ -94,4 +93,4 @@ async def refresh_token_endpoint(
     - `500`: 서버 오류
     """
     result = await refresh_access_token(request, db)
-    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
+    return BaseResponse.of_success(status.HTTP_200_OK, result)

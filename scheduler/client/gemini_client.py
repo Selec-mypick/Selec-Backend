@@ -1,6 +1,6 @@
 import aiohttp
 
-from app.core.exceptions import BadRequestException, ServerException
+from app.core.exceptions import BadRequestException, ErrorCode, ServerException
 from config import settings
 
 
@@ -29,12 +29,15 @@ class GeminiClient:
                     data = await response.json(content_type=None)
                     if response.status >= 400:
                         error = data.get("error", {}) if isinstance(data, dict) else {}
-                        message = error.get("message") or "Gemini API 호출에 실패했습니다."
-                        raise BadRequestException(message)
+                        message = error.get("message") or ErrorCode.GEMINI_API_BAD_REQUEST.message
+                        raise BadRequestException(ErrorCode.GEMINI_API_BAD_REQUEST, message=message)
                     return data
         except BadRequestException:
             raise
         except ValueError as e:
-            raise ServerException(str(e))
+            raise ServerException(ErrorCode.GEMINI_API_CALL_FAILED, message=str(e))
         except Exception as e:
-            raise ServerException(f"Gemini API 호출 중 오류가 발생했습니다: {str(e)}")
+            raise ServerException(
+                ErrorCode.GEMINI_API_CALL_FAILED,
+                message=f"{ErrorCode.GEMINI_API_CALL_FAILED.message}: {str(e)}",
+            )

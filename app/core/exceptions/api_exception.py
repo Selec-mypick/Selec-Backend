@@ -1,8 +1,11 @@
 import logging
 from typing import Optional
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
+
 from app.base.response import BaseResponse
+from app.core.exceptions.error_code import ErrorCode
 
 logger = logging.getLogger(__name__)
 
@@ -10,76 +13,41 @@ logger = logging.getLogger(__name__)
 class BaseAPIException(Exception):
     def __init__(
             self,
-            status_code: int,
-            custom_code: str,
-            message: str,
-            details: Optional[dict] = None
+            error_code: ErrorCode,
+            *,
+            message: str | None = None,
+            details: Optional[dict] = None,
     ):
-        self.status_code = status_code
-        self.custom_code = custom_code
-        self.message = message
+        self.error_code = error_code
+        self.status_code = error_code.status_code
+        self.code = error_code.code
+        self.message = message or error_code.message
         self.details = details or {}
         super().__init__(self.message)
 
 
 class BadRequestException(BaseAPIException):
-    def __init__(self, message: str = "잘못된 요청입니다.", details: Optional[dict] = None):
-        super().__init__(
-            status_code=400,
-            custom_code="BAD_REQUEST",
-            message=message,
-            details=details
-        )
+    pass
 
 
 class ConflictException(BaseAPIException):
-    def __init__(self, message: str = "리소스 충돌이 발생했습니다.", details: Optional[dict] = None):
-        super().__init__(
-            status_code=409,
-            custom_code="CONFLICT",
-            message=message,
-            details=details
-        )
+    pass
 
 
 class NotFoundException(BaseAPIException):
-    def __init__(self, message: str = "리소스를 찾을 수 없습니다.", details: Optional[dict] = None):
-        super().__init__(
-            status_code=404,
-            custom_code="NOT_FOUND",
-            message=message,
-            details=details
-        )
+    pass
 
 
 class ServerException(BaseAPIException):
-    def __init__(self, message: str = "내부 서버 오류가 발생했습니다.", details: Optional[dict] = None):
-        super().__init__(
-            status_code=500,
-            custom_code="SERVER",
-            message=message,
-            details=details
-        )
+    pass
 
 
 class UnauthorizedException(BaseAPIException):
-    def __init__(self, message: str = "인증이 필요합니다.", details: Optional[dict] = None):
-        super().__init__(
-            status_code=401,
-            custom_code="UNAUTHORIZED",
-            message=message,
-            details=details
-        )
+    pass
 
 
 class ForbiddenException(BaseAPIException):
-    def __init__(self, message: str = "접근 권한이 없습니다.", details: Optional[dict] = None):
-        super().__init__(
-            status_code=403,
-            custom_code="FORBIDDEN",
-            message=message,
-            details=details
-        )
+    pass
 
 
 def setup_exception_handlers(app):
@@ -87,7 +55,7 @@ def setup_exception_handlers(app):
     async def base_api_exception_handler(request: Request, exc: BaseAPIException):
         return JSONResponse(
             status_code=exc.status_code,
-            content=BaseResponse.of_fail(exc.status_code, exc.message).dict()
+            content=BaseResponse.of_fail(exc.status_code, exc.code, exc.message).dict(),
         )
 
     @app.exception_handler(Exception)
@@ -102,7 +70,8 @@ def setup_exception_handlers(app):
             exc_info=True,
         )
 
+        error = ErrorCode.INTERNAL_SERVER_ERROR
         return JSONResponse(
-            status_code=500,
-            content=BaseResponse.of_fail(500, "예상치 못한 오류가 발생했습니다.").dict()
+            status_code=error.status_code,
+            content=BaseResponse.of_fail(error.status_code, error.code, error.message).dict(),
         )
