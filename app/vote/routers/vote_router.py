@@ -5,8 +5,7 @@ from app.base.constants import BaseUtil
 from app.base.response import BaseResponse
 from app.base.response import VOTE_RESPONSES
 from app.core.database import get_db
-from app.users.dependency.jwt_users import get_jwt_users
-from app.users.schema.dto.jwt_users import JwtUsers
+from app.users.dependency.users_seq import get_users_seq
 from app.vote.schema.request.vote_request import CreateVoteRequest
 from app.vote.schema.response.vote_response import GetVoteResultResponse
 from app.vote.service.vote_service import create_vote, delete_vote, get_vote_result
@@ -23,7 +22,7 @@ router = APIRouter(prefix="/api/vote", tags=["VOTE"])
 async def create_vote_endpoint(
         request: CreateVoteRequest,
         question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
-        jwt_users: JwtUsers = Depends(get_jwt_users),
+        users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
     """
@@ -38,7 +37,7 @@ async def create_vote_endpoint(
     - `404`: 존재하지 않는 질문
     - `500`: 서버 오류
     """
-    await create_vote(question_seq, request, jwt_users.users_seq, db)
+    await create_vote(question_seq, request, users_seq, db)
     return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS)
 
 
@@ -49,7 +48,7 @@ async def create_vote_endpoint(
 )
 async def get_vote_result_endpoint(
         question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
-        jwt_users: JwtUsers = Depends(get_jwt_users),
+        users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
     """
@@ -64,7 +63,7 @@ async def get_vote_result_endpoint(
     - `404`: 존재하지 않는 질문
     - `500`: 서버 오류
     """
-    result = await get_vote_result(question_seq, jwt_users.users_seq, db)
+    result = await get_vote_result(question_seq, users_seq, db)
     return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
 
 
@@ -76,7 +75,7 @@ async def get_vote_result_endpoint(
 )
 async def delete_vote_endpoint(
         question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
-        jwt_users: JwtUsers = Depends(get_jwt_users),
+        users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
     """
@@ -90,5 +89,5 @@ async def delete_vote_endpoint(
     - `404`: 투표 내역 없음
     - `500`: 서버 오류
     """
-    await delete_vote(question_seq, jwt_users.users_seq, db)
+    await delete_vote(question_seq, users_seq, db)
     return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS)

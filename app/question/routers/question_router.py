@@ -5,8 +5,7 @@ from app.base.constants import BaseUtil
 from app.base.response import BaseResponse
 from app.base.response import AUTHENTICATED_RESPONSES, QUESTION_READ_RESPONSES, QUESTION_WRITE_RESPONSES
 from app.core.database import get_db
-from app.users.dependency.jwt_users import get_jwt_users
-from app.users.schema.dto.jwt_users import JwtUsers
+from app.users.dependency.users_seq import get_users_seq
 from app.question.schema.request.question_request import CreateQuestionRequest, UpdateQuestionRequest
 from app.question.schema.response.question_response import (
     CreateQuestionResponse,
@@ -31,7 +30,7 @@ router = APIRouter(prefix="/api/question", tags=["QUESTION"])
 )
 async def create_question_endpoint(
         request: CreateQuestionRequest,
-        jwt_users: JwtUsers = Depends(get_jwt_users),
+        users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
     """
@@ -45,7 +44,7 @@ async def create_question_endpoint(
     - `401`: 인증 실패
     - `500`: 서버 오류
     """
-    result = await create_question(request, jwt_users.users_seq, db)
+    result = await create_question(request, users_seq, db)
     return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS, result)
 
 
@@ -56,7 +55,7 @@ async def create_question_endpoint(
 )
 async def get_question_endpoint(
         question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
-        jwt_users: JwtUsers = Depends(get_jwt_users),
+        users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
     """
@@ -70,7 +69,7 @@ async def get_question_endpoint(
     - `404`: 존재하지 않는 질문
     - `500`: 서버 오류
     """
-    result = await get_question(question_seq, jwt_users.users_seq, db)
+    result = await get_question(question_seq, users_seq, db)
     return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
 
 
@@ -82,7 +81,7 @@ async def get_question_endpoint(
 async def update_question_endpoint(
         request: UpdateQuestionRequest,
         question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
-        jwt_users: JwtUsers = Depends(get_jwt_users),
+        users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
     """
@@ -96,7 +95,7 @@ async def update_question_endpoint(
     - `409`: 버전 충돌 (낙관적 락)
     - `500`: 서버 오류
     """
-    result = await update_question(question_seq, request, jwt_users.users_seq, db)
+    result = await update_question(question_seq, request, users_seq, db)
     return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
 
 
@@ -107,7 +106,7 @@ async def update_question_endpoint(
 )
 async def delete_question_endpoint(
         question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
-        jwt_users: JwtUsers = Depends(get_jwt_users),
+        users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
     """
@@ -118,5 +117,5 @@ async def delete_question_endpoint(
     - `404`: 존재하지 않는 질문
     - `500`: 서버 오류
     """
-    await delete_question(question_seq, jwt_users.users_seq, db)
+    await delete_question(question_seq, users_seq, db)
     return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS)

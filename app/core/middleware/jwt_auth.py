@@ -2,9 +2,9 @@ from typing import Iterable
 
 from fastapi.responses import JSONResponse
 from jose import jwt
+from app.auth.domain.token_domain import get_white_token, is_token_blacklisted
 from app.base.response import BaseResponse
 from app.core.exceptions import UnauthorizedException
-from app.core.cache import RedisClient
 from config import settings
 
 
@@ -48,17 +48,13 @@ class JWTAuthMiddleware:
             if not users_seq:
                 raise UnauthorizedException("토큰에 사용자 정보가 없습니다(users_seq).")
 
-            redis_client = await RedisClient.get_client()
-            whitelisted_token, blacklisted_token = await redis_client.mget(
-                f"auth:white:{users_seq}",
-                f"auth:black:{users_seq}",
-            )
+            whitelisted_token = await get_white_token(users_seq)
 
             if whitelisted_token is None:
                 raise UnauthorizedException("토큰이 whitelist에 등록되어 있지 않습니다. 로그인이 필요합니다.")
             if whitelisted_token != token:
                 raise UnauthorizedException("토큰이 whitelist에 등록된 토큰과 일치하지 않습니다. 토큰이 재발급되었을 수 있습니다.")
-            if blacklisted_token == token:
+            if await is_token_blacklisted(token):
                 raise UnauthorizedException("이미 무효화된 토큰입니다. 토큰이 재발급되어 이전 토큰은 사용할 수 없습니다.")
 
             scope.setdefault("state", {})["users_seq"] = users_seq
