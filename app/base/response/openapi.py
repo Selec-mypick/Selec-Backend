@@ -1,71 +1,128 @@
-from pydantic import BaseModel, Field
+from app.base.constants import BaseUtil
+from app.base.response.api_response import BaseResponse
+from app.core.exceptions.error_code import ErrorCode
 
 
-class ErrorResponse(BaseModel):
-    status: int = Field(..., description="HTTP 상태 코드")
-    code: str = Field(..., description="에러 코드")
-    message: str = Field(..., description="에러 메시지")
-    data: None = Field(None, description="에러 응답 데이터")
+def api_errors(*errors: ErrorCode) -> dict:
+    responses: dict[int, dict] = {}
+
+    for error in errors:
+        if error.status_code not in responses:
+            responses[error.status_code] = {
+                "description": error.code,
+                "model": BaseResponse,
+                "content": {
+                    "application/json": {
+                        "examples": {},
+                    }
+                },
+            }
+
+        examples = responses[error.status_code]["content"]["application/json"]["examples"]
+        examples[error.code] = {
+            "summary": error.code,
+            "description": error.message,
+            "value": {
+                "status": error.status_code,
+                "code": error.code,
+                "message": error.message,
+                "data": None,
+            },
+        }
+        responses[error.status_code]["description"] = ", ".join(examples.keys())
+
+    return responses
 
 
-def _error(status: int, code: str, message: str, description: str) -> dict:
-    return {
+def _to_code_response(
+        base: dict,
+        json_content: dict,
+        code: str,
+        example_obj: dict,
+        http_key: str,
+) -> dict:
+    value = example_obj.get("value", example_obj)
+    description = example_obj.get("description") or example_obj.get("summary") or code
+    response = {
         "description": description,
-        "model": ErrorResponse,
         "content": {
             "application/json": {
-                "example": {
-                    "status": status,
-                    "code": code,
-                    "message": message,
-                    "data": None,
-                }
+                "schema": json_content.get("schema"),
+                "example": value,
             }
         },
     }
+    if http_key.isdigit():
+        response["x-http-status"] = int(http_key)
+    if base.get("headers"):
+        response["headers"] = base["headers"]
+    return response
 
 
-ERROR_400 = _error(400, "BAD_000", "잘못된 요청입니다.", "Bad Request")
-ERROR_401 = _error(401, "AUTH_000", "인증이 필요합니다.", "Unauthorized")
-ERROR_403 = _error(403, "FORB_000", "접근 권한이 없습니다.", "Forbidden")
-ERROR_404 = _error(404, "NTF_000", "리소스를 찾을 수 없습니다.", "Not Found")
-ERROR_409 = _error(409, "CNF_000", "리소스 충돌이 발생했습니다.", "Conflict")
-ERROR_422 = _error(422, "VAL_000", "요청 값이 올바르지 않습니다.", "Validation Error")
-ERROR_500 = _error(500, "SRV_000", "내부 서버 오류가 발생했습니다.", "Internal Server Error")
+def _transform_responses(responses: dict) -> dict:
+    transformed: dict[str, dict] = {}
 
-AUTH_RESPONSES = {
-    400: ERROR_400,
-    422: ERROR_422,
-    500: ERROR_500,
-}
+    for http_key, response in responses.items():
+        if not isinstance(response, dict):
+            continue
 
-REFRESH_TOKEN_RESPONSES = {
-    401: ERROR_401,
-    422: ERROR_422,
-    500: ERROR_500,
-}
+        json_content = (response.get("content") or {}).get("application/json") or {}
+        examples = json_content.get("examples")
 
-AUTHENTICATED_RESPONSES = {
-    400: ERROR_400,
-    401: ERROR_401,
-    403: ERROR_403,
-    422: ERROR_422,
-    500: ERROR_500,
-}
+        if examples:
+            for code, example_obj in examples.items():
+                transformed[code] = _to_code_response(response, json_content, code, example_obj, http_key)
+            continue
 
-QUESTION_READ_RESPONSES = {
-    **AUTHENTICATED_RESPONSES,
-    404: ERROR_404,
-    500: ERROR_500,
-}
+        if http_key in ("200", "201"):
+            example = json_content.get("example") or {
+                "status": int(http_key),
+                "code": BaseUtil.SUCCESS_CODE,
+                "message": BaseUtil.SUCCESS,
+                "data": None,
+            }
+            transformed[BaseUtil.SUCCESS_CODE] = {
+                "description": BaseUtil.SUCCESS,
+                "x-http-status": int(http_key),
+                "content": {
+                    "application/json": {
+                        "schema": json_content.get("schema"),
+                        "example": example,
+                    }
+                },
+            }
+            continue
 
-QUESTION_WRITE_RESPONSES = {
-    **AUTHENTICATED_RESPONSES,
-    404: ERROR_404,
-    409: ERROR_409,
-}
+        example = json_content.get("example")
+        if isinstance(example, dict) and example.get("code"):
+            code = str(example["code"])
+            transformed[code] = _to_code_response(
+                response,
+                json_content,
+                code,
+                {"value": example},
+                http_key,
+            )
+        else:
+            transformed[http_key] = {
+                **response,
+                **({"x-http-status": int(http_key)} if http_key.isdigit() else {}),
+            }
 
-VOTE_RESPONSES = {
-    **AUTHENTICATED_RESPONSES,
-    404: ERROR_404,
-}
+    ordered: dict[str, dict] = {}
+    if BaseUtil.SUCCESS_CODE in transformed:
+        ordered[BaseUtil.SUCCESS_CODE] = transformed.pop(BaseUtil.SUCCESS_CODE)
+    for code in sorted(transformed.keys()):
+        ordered[code] = transformed[code]
+    return ordered
+
+
+def apply_error_code_responses(openapi_schema: dict) -> dict:
+    for path_item in openapi_schema.get("paths", {}).values():
+        for operation in path_item.values():
+            if not isinstance(operation, dict):
+                continue
+            responses = operation.get("responses")
+            if responses:
+                operation["responses"] = _transform_responses(responses)
+    return openapi_schema

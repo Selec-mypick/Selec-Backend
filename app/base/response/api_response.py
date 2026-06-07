@@ -1,11 +1,22 @@
 from typing import Generic, TypeVar, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from app.base.constants import BaseUtil
 
 T = TypeVar("T")
 
 
 class BaseResponse(BaseModel, Generic[T]):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "status": 200,
+                "code": BaseUtil.SUCCESS_CODE,
+                "message": BaseUtil.SUCCESS,
+                "data": None,
+            }
+        }
+    )
+
     status: int
     code: str
     message: str

@@ -1,21 +1,8 @@
 from app.base.response.api_response import BaseResponse
-from app.base.response.openapi import (
-    AUTH_RESPONSES,
-    AUTHENTICATED_RESPONSES,
-    ERROR_500,
-    QUESTION_READ_RESPONSES,
-    QUESTION_WRITE_RESPONSES,
-    REFRESH_TOKEN_RESPONSES,
-    VOTE_RESPONSES,
-)
+from app.base.response.openapi import api_errors, apply_error_code_responses
 
 __all__ = [
-    "AUTH_RESPONSES",
-    "AUTHENTICATED_RESPONSES",
     "BaseResponse",
-    "ERROR_500",
-    "QUESTION_READ_RESPONSES",
-    "QUESTION_WRITE_RESPONSES",
-    "REFRESH_TOKEN_RESPONSES",
-    "VOTE_RESPONSES",
+    "api_errors",
+    "apply_error_code_responses",
 ]

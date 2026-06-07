@@ -34,6 +34,7 @@ class ErrorCode(Enum):
     DUPLICATE_OPTION_SEQ = ("BAD_006", 400, "중복된 선택지 시퀀스가 포함되어 있습니다.")
     OPTION_HAS_VOTES = ("BAD_007", 400, "이미 투표가 존재하는 선택지는 수정할 수 없습니다.")
     GEMINI_API_BAD_REQUEST = ("BAD_008", 400, "Gemini API 요청이 올바르지 않습니다.")
+    VALIDATION_ERROR = ("VAL_000", 422, "요청 값이 올바르지 않습니다.")
 
     # 403 Forbidden
     QUESTION_UPDATE_FORBIDDEN = ("FORB_001", 403, "질문 수정 권한이 없습니다.")

@@ -1,11 +1,12 @@
 import logging
 
 from fastapi import FastAPI, status, Depends
+from fastapi.openapi.utils import get_openapi
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from config import settings
-from app.core.exceptions import setup_exception_handlers
+from app.core.exceptions import ErrorCode, setup_exception_handlers
 from app.core.middleware import JWTAuthMiddleware
 from app.auth.routers.auth_router import router as auth_router
 from scheduler import shutdown_scheduler, start_scheduler
@@ -16,8 +17,7 @@ from app.core.database import engine
 from app.core.observability import setup_logging
 from app.core.middleware import RequestLoggingMiddleware
 from app.core.cache import RedisClient
-from app.base.response import BaseResponse
-from app.base.response import ERROR_500
+from app.base.response import BaseResponse, api_errors, apply_error_code_responses
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +61,29 @@ def create_app() -> FastAPI:
     app.include_router(question_router)
     app.include_router(vote_router)
 
+    def custom_openapi():
+        if app.openapi_schema:
+            return app.openapi_schema
+
+        openapi_schema = get_openapi(
+            title=app.title,
+            version=app.version,
+            openapi_version=app.openapi_version,
+            description=app.description,
+            routes=app.routes,
+        )
+        app.openapi_schema = apply_error_code_responses(openapi_schema)
+        return app.openapi_schema
+
+    app.openapi = custom_openapi
+
     @app.get(
         "/actuator/health",
         response_model=BaseResponse[dict],
         status_code=status.HTTP_200_OK,
-        responses={500: ERROR_500},
+        responses={
+            **api_errors(ErrorCode.INTERNAL_SERVER_ERROR),
+        },
     )
     async def health_check():
         health_data = {"status": "healthy", "environment": settings.active_profile}
