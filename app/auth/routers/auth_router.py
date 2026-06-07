@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.schema.request.auth_request import GoogleOAuthRequest, RefreshTokenRequest
+from app.auth.schema.request.auth_request import GoogleOAuthRequest, IssueTestTokenRequest, RefreshTokenRequest
 from app.auth.schema.response.auth_response import AuthTokenResponse, CreateTestUserResponse
-from app.auth.service.auth_service import authenticate_google, create_test_user, refresh_access_token
+from app.auth.service.auth_service import authenticate_google, create_test_user, issue_test_token, refresh_access_token
 from app.base.constants import BaseUtil
 from app.base.response import BaseResponse
 from app.base.response import AUTH_RESPONSES, REFRESH_TOKEN_RESPONSES
@@ -27,6 +27,25 @@ async def create_test_user_endpoint(
     Google OAuth 없이 실제 users row를 만들고 테스트용 JWT를 발급합니다.
     """
     result = await create_test_user(db)
+    return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS, result)
+
+
+@router.post(
+    "/test/token",
+    response_model=BaseResponse[AuthTokenResponse],
+    status_code=status.HTTP_201_CREATED,
+    responses=AUTH_RESPONSES,
+)
+async def issue_test_token_endpoint(
+        request: IssueTestTokenRequest,
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    테스트 토큰 발급
+
+    테스트용으로 users_seq를 전달받아 해당 사용자의 JWT를 발급합니다.
+    """
+    result = await issue_test_token(request, db)
     return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS, result)
 
 

@@ -7,3 +7,7 @@ class GoogleOAuthRequest(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(..., min_length=1, description="재발급에 사용할 refresh token")
+
+
+class IssueTestTokenRequest(BaseModel):
+    users_seq: str = Field(..., min_length=1, description="테스트 토큰을 발급할 사용자 시퀀스")

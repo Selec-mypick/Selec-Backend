@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 
 from config import settings
-from app.auth.schema.request.auth_request import GoogleOAuthRequest, RefreshTokenRequest
+from app.auth.schema.request.auth_request import GoogleOAuthRequest, IssueTestTokenRequest, RefreshTokenRequest
 from app.auth.schema.response.auth_response import AuthTokenResponse, CreateTestUserResponse
 from app.auth.domain.token_domain import create_access_token, create_refresh_token
 from app.core.exceptions import BadRequestException, ServerException, UnauthorizedException
@@ -110,6 +110,33 @@ async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
         email=users.email,
         name=users.name,
         profile_image=users.profile_image,
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=expires_in,
+    )
+
+
+async def issue_test_token(request: IssueTestTokenRequest, db: AsyncSession) -> AuthTokenResponse:
+    users = await UsersRepository.find_by_users_seq(db, request.users_seq)
+    if users is None:
+        raise UnauthorizedException("존재하지 않는 사용자입니다.")
+    if not users.active:
+        raise UnauthorizedException("비활성화된 사용자입니다.")
+
+    try:
+        access_token, expires_in = create_access_token(users.users_seq)
+        refresh_token = create_refresh_token(users.users_seq)
+
+        redis_client = await RedisClient.get_client()
+        await redis_client.set(
+            f"auth:white:{users.users_seq}",
+            access_token,
+            ex=ACCESS_TOKEN_TTL_SECONDS,
+        )
+    except Exception as e:
+        raise ServerException(f"테스트 토큰 발급 중 오류가 발생했습니다: {str(e)}")
+
+    return AuthTokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=expires_in,
