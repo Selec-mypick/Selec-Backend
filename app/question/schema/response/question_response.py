@@ -71,6 +71,8 @@ class GetQuestionResponse(BaseModel):
             ),
             None,
         )
+        is_creator = question.users_seq == users_seq
+        can_view_vote_count = is_creator or selected_option_seq is not None
 
         return cls(
             question_seq=question.question_seq,
@@ -79,14 +81,14 @@ class GetQuestionResponse(BaseModel):
             is_anonymous=question.is_anonymous,
             status=question.status,
             version=question.version,
-            is_creator=question.users_seq == users_seq,
+            is_creator=is_creator,
             created_at=question.created_at,
             updated_at=question.updated_at,
             selected_option_seq=selected_option_seq,
             options=[
                 GetOptionResponse.from_entity(
                     option,
-                    vote_count=vote_count,
+                    vote_count=vote_count if can_view_vote_count else None,
                 )
                 for option, vote_count, _ in option_rows
             ],

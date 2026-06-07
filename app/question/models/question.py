@@ -12,7 +12,7 @@ class Question(BaseAuditEntity):
 
     title = Column(String(1024), unique=False, nullable=False)
     description = Column(String(2048), nullable=True)
-    is_anonymous = Column(Boolean, nullable=False, default=False)
+    is_anonymous = Column(Boolean, nullable=False, default=True)
     status = Column(String(20), nullable=False, default='OPEN')
     active = Column(Boolean, nullable=False, default=True)
 
