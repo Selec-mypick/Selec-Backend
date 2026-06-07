@@ -10,7 +10,7 @@ from config import settings
 async def generate_gemini_response(request: GeminiPromptRequest) -> GeminiPromptResponse:
     model = request.model or settings.gemini_model
 
-    prompt_path = Path("app/batch/prompt/vote_create_prompt.txt")
+    prompt_path = Path("app/batch/prompt/prompt.txt")
 
     if not prompt_path.exists():
         raise ServerException("Gemini 프롬프트 파일을 찾을 수 없습니다.")
