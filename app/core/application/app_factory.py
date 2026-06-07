@@ -4,6 +4,7 @@ from fastapi import FastAPI, status, Depends
 from fastapi.openapi.utils import get_openapi
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from sqlalchemy import text
 from config import settings
 from app.core.exceptions import ErrorCode, setup_exception_handlers
@@ -20,6 +21,11 @@ from app.core.cache import RedisClient
 from app.base.response import BaseResponse, api_errors, apply_error_code_responses
 
 logger = logging.getLogger(__name__)
+
+
+class HealthResponse(BaseModel):
+    status: str
+    environment: str
 
 
 def create_app() -> FastAPI:
@@ -79,7 +85,7 @@ def create_app() -> FastAPI:
 
     @app.get(
         "/actuator/health",
-        response_model=BaseResponse[dict],
+        response_model=BaseResponse[HealthResponse],
         status_code=status.HTTP_200_OK,
         responses={
             **api_errors(ErrorCode.INTERNAL_SERVER_ERROR),

@@ -70,7 +70,7 @@ def _build_schema_example(schema: dict | None, components: dict) -> Any:
     if schema_type == "object":
         properties = schema.get("properties")
         if not properties:
-            return {}
+            return None
         return {
             name: _build_schema_example(property_schema, components)
             for name, property_schema in properties.items()
@@ -99,7 +99,11 @@ def _build_success_example(http_key: str, json_content: dict, components: dict) 
 
     response_schema = _resolve_schema(json_content.get("schema"), components)
     data_schema = response_schema.get("properties", {}).get("data")
-    data_example = _build_schema_example(data_schema, components) if data_schema else None
+    data_example = None
+    if data_schema and data_schema.get("type"):
+        data_example = _build_schema_example(data_schema, components)
+    elif data_schema and data_schema.get("$ref"):
+        data_example = _build_schema_example(data_schema, components)
 
     return {
         "status": int(http_key),

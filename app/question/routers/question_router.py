@@ -117,7 +117,7 @@ async def update_question_endpoint(
 
 @router.delete(
     "/{question_seq}",
-    response_model=BaseResponse[dict],
+    response_model=BaseResponse,
     responses={
         **api_errors(
             *_AUTH_ERRORS,

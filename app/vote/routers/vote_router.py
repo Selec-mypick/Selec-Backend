@@ -23,7 +23,7 @@ _AUTH_ERRORS = (
 
 @router.post(
     "/{question_seq}",
-    response_model=BaseResponse[dict],
+    response_model=BaseResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         **api_errors(
@@ -80,7 +80,7 @@ async def get_vote_result_endpoint(
 
 @router.delete(
     "/{question_seq}",
-    response_model=BaseResponse[dict],
+    response_model=BaseResponse,
     status_code=status.HTTP_200_OK,
     responses={
         **api_errors(
