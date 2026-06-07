@@ -10,7 +10,6 @@ from app.question.schema.request.question_request import CreateQuestionRequest, 
 from app.question.schema.response.question_response import (
     CreateQuestionResponse,
     GetQuestionResponse,
-    GetQuestionVoteResultResponse,
     UpdateQuestionResponse,
 )
 from app.vote.repository.vote_repository import VoteRepository
@@ -50,21 +49,6 @@ async def get_question(question_seq: int, users_seq: str, db: AsyncSession) -> G
 
     question, option_rows = question_detail
     return GetQuestionResponse.from_detail_rows(question, option_rows, users_seq)
-
-
-async def get_question_result(question_seq: int, users_seq: str, db: AsyncSession) -> GetQuestionVoteResultResponse:
-    question = await QuestionRepository.find_by_question_seq(db, question_seq)
-    if question is None:
-        raise NotFoundException("존재하지 않는 질문입니다.")
-    if question.is_anonymous:
-        raise ForbiddenException("익명 질문은 투표자 목록을 조회할 수 없습니다.")
-
-    is_creator = question.users_seq == users_seq
-    if not is_creator and await VoteRepository.find_by_users_seq_and_question_seq(db, users_seq, question_seq) is None:
-        raise ForbiddenException("투표 후 결과를 조회할 수 있습니다.")
-
-    option_rows = await QuestionRepository.find_result_options_by_question_seq(db, question_seq)
-    return GetQuestionVoteResultResponse.from_result_rows(option_rows)
 
 
 async def update_question(

@@ -8,7 +8,8 @@ from app.core.database import get_db
 from app.users.dependency.jwt_users import get_jwt_users
 from app.users.schema.dto.jwt_users import JwtUsers
 from app.vote.schema.request.vote_request import CreateVoteRequest
-from app.vote.service.vote_service import create_vote, delete_vote
+from app.vote.schema.response.vote_response import GetVoteResultResponse
+from app.vote.service.vote_service import create_vote, delete_vote, get_vote_result
 
 router = APIRouter(prefix="/api/vote", tags=["VOTE"])
 
@@ -39,6 +40,32 @@ async def create_vote_endpoint(
     """
     await create_vote(question_seq, request, jwt_users.users_seq, db)
     return BaseResponse.of(status.HTTP_201_CREATED, BaseUtil.SUCCESS)
+
+
+@router.get(
+    "/{question_seq}/result",
+    response_model=BaseResponse[GetVoteResultResponse],
+    responses=VOTE_RESPONSES,
+)
+async def get_vote_result_endpoint(
+        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        jwt_users: JwtUsers = Depends(get_jwt_users),
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    투표 결과 조회
+
+    익명 질문은 옵션별 투표 수만 조회하고, 비익명 질문은 권한이 있는 경우 투표자 목록까지 조회합니다.
+
+    **Response**
+    - `200`: 조회 성공
+    - `401`: 인증 실패
+    - `403`: 비익명 질문의 미투표 상태
+    - `404`: 존재하지 않는 질문
+    - `500`: 서버 오류
+    """
+    result = await get_vote_result(question_seq, jwt_users.users_seq, db)
+    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
 
 
 @router.delete(

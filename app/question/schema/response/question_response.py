@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from app.options.models.options import Options
     from app.question.models.question import Question
-    from app.users.models.users import Users
 
 
 class CreateQuestionResponse(BaseModel):
@@ -107,39 +106,4 @@ class GetQuestionResponse(BaseModel):
                 }
                 for option, vote_count, _ in option_rows
             ],
-        )
-
-
-class GetQuestionVoteResultResponse(BaseModel):
-    options: list[dict]
-
-    @classmethod
-    def from_result_rows(
-            cls,
-            option_rows: list[tuple["Options", Optional["Users"]]],
-    ) -> "GetQuestionVoteResultResponse":
-        options_by_seq: dict[int, dict] = {}
-
-        for option, voter in option_rows:
-            if option.options_seq not in options_by_seq:
-                options_by_seq[option.options_seq] = {
-                    "options_seq": option.options_seq,
-                    "content": option.content,
-                    "vote_count": 0,
-                    "voters": [],
-                }
-
-            if voter is not None:
-                result_option = options_by_seq[option.options_seq]
-                result_option["voters"].append({
-                    "google_id": voter.google_id,
-                    "nick_name": voter.nick_name,
-                    "email": voter.email,
-                    "name": voter.name,
-                    "profile_image": voter.profile_image,
-                })
-                result_option["vote_count"] += 1
-
-        return cls(
-            options=list(options_by_seq.values()),
         )

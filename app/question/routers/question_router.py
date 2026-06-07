@@ -11,14 +11,12 @@ from app.question.schema.request.question_request import CreateQuestionRequest, 
 from app.question.schema.response.question_response import (
     CreateQuestionResponse,
     GetQuestionResponse,
-    GetQuestionVoteResultResponse,
     UpdateQuestionResponse,
 )
 from app.question.service.question_service import (
     create_question,
     delete_question,
     get_question,
-    get_question_result,
     update_question,
 )
 
@@ -73,32 +71,6 @@ async def get_question_endpoint(
     - `500`: 서버 오류
     """
     result = await get_question(question_seq, jwt_users.users_seq, db)
-    return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
-
-
-@router.get(
-    "/{question_seq}/result",
-    response_model=BaseResponse[GetQuestionVoteResultResponse],
-    responses=QUESTION_READ_RESPONSES,
-)
-async def get_question_result_endpoint(
-        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
-        jwt_users: JwtUsers = Depends(get_jwt_users),
-        db: AsyncSession = Depends(get_db),
-):
-    """
-    질문 투표 결과 조회
-
-    비익명 질문에 본인이 투표를 완료한 경우 옵션별 투표자 목록을 조회합니다.
-
-    **Response**
-    - `200`: 조회 성공
-    - `401`: 인증 실패
-    - `403`: 익명 질문, 미투표 상태
-    - `404`: 존재하지 않는 질문
-    - `500`: 서버 오류
-    """
-    result = await get_question_result(question_seq, jwt_users.users_seq, db)
     return BaseResponse.of(status.HTTP_200_OK, BaseUtil.SUCCESS, result)
 
 
