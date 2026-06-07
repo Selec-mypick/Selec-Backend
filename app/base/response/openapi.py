@@ -21,7 +21,6 @@ def api_errors(*errors: ErrorCode) -> dict:
         examples = responses[error.status_code]["content"]["application/json"]["examples"]
         examples[error.code] = {
             "summary": error.code,
-            "description": error.message,
             "value": {
                 "status": error.status_code,
                 "code": error.code,
@@ -35,16 +34,13 @@ def api_errors(*errors: ErrorCode) -> dict:
 
 
 def _to_code_response(
-        base: dict,
         json_content: dict,
-        code: str,
         example_obj: dict,
-        http_key: str,
 ) -> dict:
-    value = example_obj.get("value", example_obj)
-    description = example_obj.get("description") or example_obj.get("summary") or code
-    response = {
-        "description": description,
+    value = dict(example_obj.get("value", example_obj))
+    value.setdefault("data", None)
+    return {
+        "description": "",
         "content": {
             "application/json": {
                 "schema": json_content.get("schema"),
@@ -52,11 +48,6 @@ def _to_code_response(
             }
         },
     }
-    if http_key.isdigit():
-        response["x-http-status"] = int(http_key)
-    if base.get("headers"):
-        response["headers"] = base["headers"]
-    return response
 
 
 def _transform_responses(responses: dict) -> dict:
@@ -71,7 +62,7 @@ def _transform_responses(responses: dict) -> dict:
 
         if examples:
             for code, example_obj in examples.items():
-                transformed[code] = _to_code_response(response, json_content, code, example_obj, http_key)
+                transformed[code] = _to_code_response(json_content, example_obj)
             continue
 
         if http_key in ("200", "201"):
@@ -81,9 +72,10 @@ def _transform_responses(responses: dict) -> dict:
                 "message": BaseUtil.SUCCESS,
                 "data": None,
             }
+            if "data" not in example:
+                example = {**example, "data": None}
             transformed[BaseUtil.SUCCESS_CODE] = {
-                "description": BaseUtil.SUCCESS,
-                "x-http-status": int(http_key),
+                "description": "",
                 "content": {
                     "application/json": {
                         "schema": json_content.get("schema"),
@@ -97,17 +89,11 @@ def _transform_responses(responses: dict) -> dict:
         if isinstance(example, dict) and example.get("code"):
             code = str(example["code"])
             transformed[code] = _to_code_response(
-                response,
                 json_content,
-                code,
                 {"value": example},
-                http_key,
             )
         else:
-            transformed[http_key] = {
-                **response,
-                **({"x-http-status": int(http_key)} if http_key.isdigit() else {}),
-            }
+            transformed[http_key] = response
 
     ordered: dict[str, dict] = {}
     if BaseUtil.SUCCESS_CODE in transformed:

@@ -55,7 +55,7 @@ def setup_exception_handlers(app):
     async def base_api_exception_handler(request: Request, exc: BaseAPIException):
         return JSONResponse(
             status_code=exc.status_code,
-            content=BaseResponse.of_fail(exc.status_code, exc.code, exc.message).dict(),
+            content=BaseResponse.of_fail(exc.status_code, exc.code, exc.message).to_content(),
         )
 
     @app.exception_handler(Exception)
@@ -73,5 +73,5 @@ def setup_exception_handlers(app):
         error = ErrorCode.INTERNAL_SERVER_ERROR
         return JSONResponse(
             status_code=error.status_code,
-            content=BaseResponse.of_fail(error.status_code, error.code, error.message).dict(),
+            content=BaseResponse.of_fail(error.status_code, error.code, error.message).to_content(),
         )

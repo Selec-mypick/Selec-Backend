@@ -66,5 +66,5 @@ class JWTAuthMiddleware:
         except UnauthorizedException as e:
             await JSONResponse(
                 status_code=e.status_code,
-                content=BaseResponse.of_fail(e.status_code, e.code, e.message).dict(),
+                content=BaseResponse.of_fail(e.status_code, e.code, e.message).to_content(),
             )(scope, receive, send)
