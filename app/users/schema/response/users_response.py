@@ -13,7 +13,6 @@ class GetMyInfoResponse(BaseModel):
     email: str | None
     name: str | None
     profile_image: str | None
-    active: bool
     created_at: datetime
     updated_at: datetime
 
@@ -25,7 +24,6 @@ class GetMyInfoResponse(BaseModel):
             email=users.email,
             name=users.name,
             profile_image=users.profile_image,
-            active=users.active,
             created_at=users.created_at,
             updated_at=users.updated_at,
         )

@@ -20,7 +20,6 @@ class GetQuestionResponse(BaseModel):
     description: str | None
     is_anonymous: bool
     status: str
-    active: bool
     version: int
     is_creator: bool
     created_at: datetime
@@ -43,7 +42,6 @@ class GetQuestionResponse(BaseModel):
             description=question.description,
             is_anonymous=question.is_anonymous,
             status=question.status,
-            active=question.active,
             version=question.version,
             is_creator=is_creator,
             created_at=question.created_at,
@@ -80,7 +78,6 @@ class GetQuestionResponse(BaseModel):
             description=question.description,
             is_anonymous=question.is_anonymous,
             status=question.status,
-            active=question.active,
             version=question.version,
             is_creator=question.users_seq == users_seq,
             created_at=question.created_at,

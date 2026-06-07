@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 class JwtUsers(BaseModel):
     users_seq: str
     nick_name: str | None
-    active: bool
     created_at: datetime
     updated_at: datetime
 
@@ -19,7 +18,6 @@ class JwtUsers(BaseModel):
         return cls(
             users_seq=users.users_seq,
             nick_name=users.nick_name,
-            active=users.active,
             created_at=users.created_at,
             updated_at=users.updated_at,
         )

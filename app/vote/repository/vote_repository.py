@@ -38,6 +38,7 @@ class VoteRepository:
             select(Vote).where(
                 Vote.users_seq == users_seq,
                 Vote.question_seq == question_seq,
+                Vote.active.is_(True),
             )
         )
         return result.scalar_one()
