@@ -86,6 +86,21 @@ class Settings:
         return client_id
 
     @property
+    def gemini_api_key(self) -> str:
+        api_key = self.get_env('GEMINI_API_KEY')
+        if not api_key:
+            raise ValueError(f"GEMINI_API_KEY가 설정되지 않았습니다. ({self.active_profile} 환경)")
+        return api_key
+
+    @property
+    def gemini_model(self) -> str:
+        return self.get_env('GEMINI_MODEL', 'gemini-2.5-flash')
+
+    @property
+    def gemini_api_base_url(self) -> str:
+        return self.get_env('GEMINI_API_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta')
+
+    @property
     def cors_origins(self) -> list[str]:
         """CORS 허용 origin 목록. 쉼표로 구분된 문자열을 리스트로 변환"""
         origins_str = self.get_env('CORS_ORIGINS', '*')
