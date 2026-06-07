@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 class JwtUsers(BaseModel):
-    users_seq: int
+    users_seq: str
     nick_name: str | None
     active: bool
     created_at: datetime

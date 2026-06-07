@@ -27,7 +27,7 @@ class OptionsRepository:
         return result.scalars().all()
 
     @staticmethod
-    async def deactivate_by_question_seq(db: AsyncSession, question_seq: int, updated_by: int) -> int:
+    async def deactivate_by_question_seq(db: AsyncSession, question_seq: int, updated_by: str) -> int:
         result = await db.execute(
             update(Options)
             .where(
@@ -47,7 +47,7 @@ class OptionsRepository:
             db: AsyncSession,
             question_seq: int,
             options_seqs: set[int],
-            updated_by: int,
+            updated_by: str,
     ) -> int:
         if not options_seqs:
             return 0

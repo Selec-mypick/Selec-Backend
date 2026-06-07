@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, Boolean, String
+from uuid import uuid4
+
+from sqlalchemy import Column, Boolean, String
 
 from app.base.entity import BaseTimeEntity
 from app.core.utils import now
@@ -7,7 +9,7 @@ from app.core.utils import now
 class Users(BaseTimeEntity):
     __tablename__ = 'users'
 
-    users_seq = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    users_seq = Column(String(36), primary_key=True, default=lambda: str(uuid4()), index=True)
     google_id = Column(String(128), unique=True, nullable=False, index=True)
     nick_name = Column(String(20), unique=True, nullable=True, index=True)
     email = Column(String(256), nullable=True)

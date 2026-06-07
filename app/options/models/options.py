@@ -17,7 +17,7 @@ class Options(BaseAuditEntity):
     question = relationship("Question")
 
     @classmethod
-    def create(cls, question_seq: int, content: str, users_seq: int) -> "Options":
+    def create(cls, question_seq: int, content: str, users_seq: str) -> "Options":
         return cls(
             question_seq=question_seq,
             content=content,
@@ -26,13 +26,13 @@ class Options(BaseAuditEntity):
             updated_by=users_seq,
         )
 
-    def update_content(self, content: str, updated_by: int) -> None:
+    def update_content(self, content: str, updated_by: str) -> None:
         self.content = content
         self.active = True
         self.updated_by = updated_by
         self.updated_at = now()
 
-    def deactivate(self, updated_by: int) -> None:
+    def deactivate(self, updated_by: str) -> None:
         self.active = False
         self.updated_by = updated_by
         self.updated_at = now()

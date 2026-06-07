@@ -47,7 +47,6 @@ class JWTAuthMiddleware:
             if not users_seq:
                 raise UnauthorizedException("토큰에 사용자 정보가 없습니다(users_seq).")
 
-            users_seq = int(users_seq)
             redis_client = await RedisClient.get_client()
             whitelisted_token, blacklisted_token = await redis_client.mget(
                 f"auth:white:{users_seq}",

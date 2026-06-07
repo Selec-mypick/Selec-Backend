@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer
+from sqlalchemy import Column, DateTime, String
 from app.core.database import Base
 from app.core.utils import now
 
@@ -13,5 +13,5 @@ class BaseTimeEntity(Base):
 class BaseAuditEntity(BaseTimeEntity):
     __abstract__ = True
 
-    created_by = Column(Integer, nullable=False)
-    updated_by = Column(Integer, nullable=False)
+    created_by = Column(String(36), nullable=False)
+    updated_by = Column(String(36), nullable=False)

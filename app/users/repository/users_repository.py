@@ -13,7 +13,7 @@ class UsersRepository:
         return users
 
     @staticmethod
-    async def find_by_users_seq(db: AsyncSession, users_seq: int) -> Users | None:
+    async def find_by_users_seq(db: AsyncSession, users_seq: str) -> Users | None:
         result = await db.execute(
             select(Users).where(
                 Users.users_seq == users_seq,

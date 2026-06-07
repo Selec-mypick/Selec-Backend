@@ -28,7 +28,7 @@ class QuestionRepository:
     async def find_detail_by_question_seq(
             db: AsyncSession,
             question_seq: int,
-            users_seq: int,
+            users_seq: str,
     ) -> tuple[Question, list[tuple[Options, int, int | None]]] | None:
         vote_count_subquery = (
             select(

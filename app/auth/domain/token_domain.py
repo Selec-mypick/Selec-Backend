@@ -10,7 +10,7 @@ from app.users.dependency.dependency import (
 )
 
 
-def create_access_token(users_seq: int) -> tuple[str, int]:
+def create_access_token(users_seq: str) -> tuple[str, int]:
     expires_in = ACCESS_TOKEN_EXPIRE_MINUTES * 60
     now = datetime.now(timezone.utc)
     payload = {
@@ -22,7 +22,7 @@ def create_access_token(users_seq: int) -> tuple[str, int]:
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM), expires_in
 
 
-def create_refresh_token(users_seq: int) -> str:
+def create_refresh_token(users_seq: str) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "users_seq": users_seq,

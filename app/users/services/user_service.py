@@ -6,7 +6,7 @@ from app.users.schema.request.users_request import UpdateMyInfoRequest
 from app.users.schema.response.users_response import GetMyInfoResponse
 
 
-async def get_my_info(users_seq: int, db: AsyncSession) -> GetMyInfoResponse:
+async def get_my_info(users_seq: str, db: AsyncSession) -> GetMyInfoResponse:
     users = await UsersRepository.find_by_users_seq(db, users_seq)
     if users is None:
         raise NotFoundException("존재하지 않는 사용자입니다.")
@@ -15,7 +15,7 @@ async def get_my_info(users_seq: int, db: AsyncSession) -> GetMyInfoResponse:
 
 
 async def update_my_info(
-        users_seq: int,
+        users_seq: str,
         request: UpdateMyInfoRequest,
         db: AsyncSession,
 ) -> GetMyInfoResponse:

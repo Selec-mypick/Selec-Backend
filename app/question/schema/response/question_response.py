@@ -63,7 +63,7 @@ class GetQuestionResponse(BaseModel):
             cls,
             question: "Question",
             option_rows: list[tuple["Options", int, int | None]],
-            users_seq: int,
+            users_seq: str,
     ) -> "GetQuestionResponse":
         selected_option_seq = next(
             (

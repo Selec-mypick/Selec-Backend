@@ -9,7 +9,7 @@ class AuthTokenResponse(BaseModel):
 
 
 class CreateTestUserResponse(AuthTokenResponse):
-    users_seq: int
+    users_seq: str
     google_id: str
     nick_name: str | None
     email: str | None

@@ -11,7 +11,7 @@ from app.question.schema.response.question_response import CreateQuestionRespons
 from app.vote.repository.vote_repository import VoteRepository
 
 
-async def create_question(request: CreateQuestionRequest, users_seq: int, db: AsyncSession) -> CreateQuestionResponse:
+async def create_question(request: CreateQuestionRequest, users_seq: str, db: AsyncSession) -> CreateQuestionResponse:
     new_question = Question(
         users_seq=users_seq,
         title=request.title,
@@ -38,7 +38,7 @@ async def create_question(request: CreateQuestionRequest, users_seq: int, db: As
     return CreateQuestionResponse(question_seq=saved_question.question_seq)
 
 
-async def get_question(question_seq: int, users_seq: int, db: AsyncSession) -> GetQuestionResponse:
+async def get_question(question_seq: int, users_seq: str, db: AsyncSession) -> GetQuestionResponse:
     question_detail = await QuestionRepository.find_detail_by_question_seq(db, question_seq, users_seq)
     if question_detail is None:
         raise NotFoundException("존재하지 않는 질문입니다.")
@@ -50,7 +50,7 @@ async def get_question(question_seq: int, users_seq: int, db: AsyncSession) -> G
 async def update_question(
         question_seq: int,
         request: UpdateQuestionRequest,
-        users_seq: int,
+        users_seq: str,
         db: AsyncSession,
 ) -> GetQuestionResponse:
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
@@ -129,7 +129,7 @@ async def update_question(
     return GetQuestionResponse.from_entity(question, response_options, is_creator=True)
 
 
-async def delete_question(question_seq: int, users_seq: int, db: AsyncSession) -> None:
+async def delete_question(question_seq: int, users_seq: str, db: AsyncSession) -> None:
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
         raise NotFoundException("존재하지 않는 질문입니다.")

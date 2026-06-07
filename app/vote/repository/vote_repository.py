@@ -10,7 +10,7 @@ class VoteRepository:
     @staticmethod
     async def upsert(
             db: AsyncSession,
-            users_seq: int,
+            users_seq: str,
             question_seq: int,
             options_seq: int,
     ) -> Vote:
@@ -83,7 +83,7 @@ class VoteRepository:
     @staticmethod
     async def find_by_users_seq_and_question_seq(
             db: AsyncSession,
-            users_seq: int,
+            users_seq: str,
             question_seq: int,
     ) -> Vote | None:
         result = await db.execute(
@@ -96,7 +96,7 @@ class VoteRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def deactivate_by_question_seq(db: AsyncSession, question_seq: int, updated_by: int) -> int:
+    async def deactivate_by_question_seq(db: AsyncSession, question_seq: int, updated_by: str) -> int:
         result = await db.execute(
             update(Vote)
             .where(
@@ -116,7 +116,7 @@ class VoteRepository:
             db: AsyncSession,
             question_seq: int,
             options_seqs: set[int],
-            updated_by: int,
+            updated_by: str,
     ) -> int:
         if not options_seqs:
             return 0
