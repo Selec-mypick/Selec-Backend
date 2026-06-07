@@ -1,3 +1,5 @@
+from typing import Any
+
 from app.base.constants import BaseUtil
 from app.base.response.api_response import BaseResponse
 from app.core.exceptions.error_code import ErrorCode
@@ -33,6 +35,80 @@ def api_errors(*errors: ErrorCode) -> dict:
     return responses
 
 
+def _resolve_schema(schema: dict | None, components: dict) -> dict:
+    if not schema:
+        return {}
+    if "$ref" in schema:
+        ref_name = schema["$ref"].split("/")[-1]
+        return components.get(ref_name, {})
+    return schema
+
+
+def _build_schema_example(schema: dict | None, components: dict) -> Any:
+    schema = _resolve_schema(schema, components)
+    if not schema:
+        return None
+
+    if "example" in schema:
+        return schema["example"]
+    if "default" in schema:
+        return schema["default"]
+    if "enum" in schema:
+        return schema["enum"][0]
+
+    for composite_key in ("allOf", "anyOf", "oneOf"):
+        variants = schema.get(composite_key)
+        if variants:
+            for variant in variants:
+                if variant.get("type") == "null":
+                    continue
+                example = _build_schema_example(variant, components)
+                if example is not None:
+                    return example
+
+    schema_type = schema.get("type")
+    if schema_type == "object":
+        properties = schema.get("properties")
+        if not properties:
+            return {}
+        return {
+            name: _build_schema_example(property_schema, components)
+            for name, property_schema in properties.items()
+        }
+    if schema_type == "array":
+        item_example = _build_schema_example(schema.get("items"), components)
+        return [] if item_example is None else [item_example]
+    if schema_type == "integer":
+        return 0
+    if schema_type == "number":
+        return 0
+    if schema_type == "boolean":
+        return False
+    if schema_type == "string":
+        if schema.get("format") == "date-time":
+            return "2024-01-01T00:00:00"
+        return "string"
+
+    return None
+
+
+def _build_success_example(http_key: str, json_content: dict, components: dict) -> dict:
+    existing_example = json_content.get("example")
+    if isinstance(existing_example, dict) and "data" in existing_example:
+        return existing_example
+
+    response_schema = _resolve_schema(json_content.get("schema"), components)
+    data_schema = response_schema.get("properties", {}).get("data")
+    data_example = _build_schema_example(data_schema, components) if data_schema else None
+
+    return {
+        "status": int(http_key),
+        "code": BaseUtil.SUCCESS_CODE,
+        "message": BaseUtil.SUCCESS,
+        "data": data_example,
+    }
+
+
 def _to_code_response(
         json_content: dict,
         example_obj: dict,
@@ -50,7 +126,7 @@ def _to_code_response(
     }
 
 
-def _transform_responses(responses: dict) -> dict:
+def _transform_responses(responses: dict, components: dict) -> dict:
     transformed: dict[str, dict] = {}
 
     for http_key, response in responses.items():
@@ -66,14 +142,7 @@ def _transform_responses(responses: dict) -> dict:
             continue
 
         if http_key in ("200", "201"):
-            example = json_content.get("example") or {
-                "status": int(http_key),
-                "code": BaseUtil.SUCCESS_CODE,
-                "message": BaseUtil.SUCCESS,
-                "data": None,
-            }
-            if "data" not in example:
-                example = {**example, "data": None}
+            example = _build_success_example(http_key, json_content, components)
             transformed[BaseUtil.SUCCESS_CODE] = {
                 "description": "",
                 "content": {
@@ -104,11 +173,12 @@ def _transform_responses(responses: dict) -> dict:
 
 
 def apply_error_code_responses(openapi_schema: dict) -> dict:
+    components = openapi_schema.get("components", {}).get("schemas", {})
     for path_item in openapi_schema.get("paths", {}).values():
         for operation in path_item.values():
             if not isinstance(operation, dict):
                 continue
             responses = operation.get("responses")
             if responses:
-                operation["responses"] = _transform_responses(responses)
+                operation["responses"] = _transform_responses(responses, components)
     return openapi_schema
