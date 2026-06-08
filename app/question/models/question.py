@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 
 from app.base.entity import BaseAuditEntity
@@ -10,6 +12,7 @@ class Question(BaseAuditEntity):
 
     question_seq = Column(Integer, primary_key=True, index=True)
     users_seq = Column(String(36), ForeignKey('users.users_seq'), nullable=False, index=True)
+    share_token = Column(String(36), unique=True, nullable=False, index=True)
 
     title = Column(String(1024), unique=False, nullable=False)
     description = Column(String(2048), nullable=True)
@@ -19,6 +22,10 @@ class Question(BaseAuditEntity):
 
     version = Column(Integer, nullable=False, default=0)
     __mapper_args__ = {"version_id_col": version}
+
+    @staticmethod
+    def generate_share_token() -> str:
+        return str(uuid4())
 
     def update(self, title: str, description: str | None, is_anonymous: bool, updated_by: str) -> None:
         self.title = title

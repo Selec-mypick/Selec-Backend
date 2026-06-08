@@ -20,6 +20,7 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
     async def create_question_action() -> CreateQuestionResponse:
         new_question = Question(
             users_seq=users_seq,
+            share_token=Question.generate_share_token(),
             title=request.title,
             description=request.description or None,
             is_anonymous=request.is_anonymous,
