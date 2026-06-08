@@ -28,7 +28,7 @@ class BaseAPIException(Exception):
 
 def setup_exception_handlers(app):
     @app.exception_handler(BaseAPIException)
-    async def base_api_exception_handler(exc: BaseAPIException):
+    async def base_api_exception_handler(request: Request, exc: BaseAPIException):
         return JSONResponse(
             status_code=exc.status_code,
             content=BaseResponse.of_fail(exc.status_code, exc.code, exc.message).to_content(),
