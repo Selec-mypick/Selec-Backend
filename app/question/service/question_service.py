@@ -20,7 +20,7 @@ from config import settings
 async def create_question(request: CreateQuestionRequest, users_seq: str, db: AsyncSession) -> CreateQuestionResponse:
     async def create_question_action() -> CreateQuestionResponse:
         question_seq = Question.generate_question_seq()
-        share_url = f"{settings.service_base_url}/q/{question_seq}"
+        share_url = f"{settings.service_base_url}/deeplink/{question_seq}"
         new_question = Question(
             question_seq=question_seq,
             users_seq=users_seq,
