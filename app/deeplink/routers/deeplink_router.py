@@ -46,7 +46,6 @@ def _install_context(platform: str) -> dict[str, str]:
 @router.get("/deeplink/{question_seq}", response_class=HTMLResponse)
 async def question_deeplink_fallback(
         request: Request,
-        question_seq: UUID = Path(..., description="질문 UUID"),
 ):
     platform = _detect_platform(request.headers.get("user-agent", ""))
     context = _install_context(platform)
