@@ -9,7 +9,7 @@ class Options(BaseAuditEntity):
     __tablename__ = 'options'
 
     options_seq = Column(Integer, primary_key=True, index=True)
-    question_seq = Column(Integer, ForeignKey('question.question_seq'), nullable=False, index=True)
+    question_seq = Column(String(36), ForeignKey('question.question_seq'), nullable=False, index=True)
 
     content = Column(String(1024), nullable=False)
     active = Column(Boolean, nullable=False, default=True)
@@ -17,7 +17,7 @@ class Options(BaseAuditEntity):
     question = relationship("Question")
 
     @classmethod
-    def create(cls, question_seq: int, content: str, users_seq: str) -> "Options":
+    def create(cls, question_seq: str, content: str, users_seq: str) -> "Options":
         return cls(
             question_seq=question_seq,
             content=content,

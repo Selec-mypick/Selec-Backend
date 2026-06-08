@@ -20,7 +20,6 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
     async def create_question_action() -> CreateQuestionResponse:
         new_question = Question(
             users_seq=users_seq,
-            share_token=Question.generate_share_token(),
             title=request.title,
             description=request.description or None,
             is_anonymous=request.is_anonymous,
@@ -40,7 +39,7 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
     return await run_in_transaction(db, create_question_action, "질문 생성 중 오류가 발생했습니다")
 
 
-async def get_question(question_seq: int, users_seq: str, db: AsyncSession) -> GetQuestionResponse:
+async def get_question(question_seq: str, users_seq: str, db: AsyncSession) -> GetQuestionResponse:
     question_detail = await QuestionRepository.find_detail_by_question_seq(db, question_seq, users_seq)
     if question_detail is None:
         raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
@@ -49,7 +48,7 @@ async def get_question(question_seq: int, users_seq: str, db: AsyncSession) -> G
 
 
 async def update_question(
-        question_seq: int,
+        question_seq: str,
         request: UpdateQuestionRequest,
         users_seq: str,
         db: AsyncSession,
@@ -129,7 +128,7 @@ async def update_question(
     )
 
 
-async def delete_question(question_seq: int, users_seq: str, db: AsyncSession) -> None:
+async def delete_question(question_seq: str, users_seq: str, db: AsyncSession) -> None:
     stale_exception = BaseAPIException(ErrorCode.QUESTION_STALE)
 
     async def delete_question_action() -> None:

@@ -10,7 +10,7 @@ from app.vote.schema.request.vote_request import CreateVoteRequest
 from app.vote.schema.response.vote_response import GetVoteResultResponse
 
 
-async def create_vote(question_seq: int, request: CreateVoteRequest, users_seq: str, db: AsyncSession) -> None:
+async def create_vote(question_seq: str, request: CreateVoteRequest, users_seq: str, db: AsyncSession) -> None:
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
         raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
@@ -33,7 +33,7 @@ async def create_vote(question_seq: int, request: CreateVoteRequest, users_seq: 
     await run_in_transaction(db, create_vote_action, "투표 저장 중 오류가 발생했습니다")
 
 
-async def get_vote_result(question_seq: int, users_seq: str, db: AsyncSession) -> GetVoteResultResponse:
+async def get_vote_result(question_seq: str, users_seq: str, db: AsyncSession) -> GetVoteResultResponse:
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
         raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
@@ -47,7 +47,7 @@ async def get_vote_result(question_seq: int, users_seq: str, db: AsyncSession) -
     return GetVoteResultResponse.from_result_rows(option_rows, question.is_anonymous)
 
 
-async def delete_vote(question_seq: int, users_seq: str, db: AsyncSession) -> None:
+async def delete_vote(question_seq: str, users_seq: str, db: AsyncSession) -> None:
     vote = await VoteRepository.find_by_users_seq_and_question_seq(db, users_seq, question_seq)
     if vote is None:
         raise BaseAPIException(ErrorCode.VOTE_NOT_FOUND)

@@ -5,13 +5,13 @@ from pydantic import BaseModel, Field
 
 class QuestionOptionResponse(BaseModel):
     options_seq: int
-    question_seq: int
+    question_seq: str
     content: str
     vote_count: int | None = Field(default=None, description="투표 수")
 
 
 class CreateQuestionResponse(BaseModel):
-    question_seq: int
+    question_seq: str
 
 
 class UpdateQuestionResponse(BaseModel):
@@ -19,7 +19,7 @@ class UpdateQuestionResponse(BaseModel):
 
 
 class GetQuestionResponse(BaseModel):
-    question_seq: int
+    question_seq: str
     title: str
     description: str | None
     is_anonymous: bool

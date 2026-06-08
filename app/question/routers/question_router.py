@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -69,7 +71,7 @@ async def create_question_endpoint(
     },
 )
 async def get_question_endpoint(
-        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        question_seq: UUID = Path(..., description="질문 UUID"),
         users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
@@ -78,7 +80,7 @@ async def get_question_endpoint(
 
     작성자이거나 해당 질문에 투표한 사용자에게만 선택지별 vote_count가 노출됩니다.
     """
-    result = await get_question(question_seq, users_seq, db)
+    result = await get_question(str(question_seq), users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 
@@ -102,7 +104,7 @@ async def get_question_endpoint(
 )
 async def update_question_endpoint(
         request: UpdateQuestionRequest,
-        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        question_seq: UUID = Path(..., description="질문 UUID"),
         users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
@@ -111,7 +113,7 @@ async def update_question_endpoint(
 
     낙관적 락(version)으로 동시 수정을 막고, 종료된 투표나 이미 투표된 선택지는 수정할 수 없습니다.
     """
-    result = await update_question(question_seq, request, users_seq, db)
+    result = await update_question(str(question_seq), request, users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 
@@ -130,7 +132,7 @@ async def update_question_endpoint(
     },
 )
 async def delete_question_endpoint(
-        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        question_seq: UUID = Path(..., description="질문 UUID"),
         users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
@@ -139,5 +141,5 @@ async def delete_question_endpoint(
 
     연결된 선택지와 투표도 함께 비활성화됩니다.
     """
-    await delete_question(question_seq, users_seq, db)
+    await delete_question(str(question_seq), users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK)

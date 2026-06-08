@@ -13,7 +13,7 @@ class Vote(BaseAuditEntity):
 
     vote_seq = Column(Integer, primary_key=True, index=True)
     users_seq = Column(String(36), ForeignKey('users.users_seq'), nullable=False, index=True)
-    question_seq = Column(Integer, ForeignKey('question.question_seq'), nullable=False, index=True)
+    question_seq = Column(String(36), ForeignKey('question.question_seq'), nullable=False, index=True)
     options_seq = Column(Integer, ForeignKey('options.options_seq'), nullable=False, index=True)
     active = Column(Boolean, nullable=False, default=True)
 
@@ -22,7 +22,7 @@ class Vote(BaseAuditEntity):
     option = relationship("Options")
 
     @classmethod
-    def create(cls, users_seq: str, question_seq: int, options_seq: int) -> "Vote":
+    def create(cls, users_seq: str, question_seq: str, options_seq: int) -> "Vote":
         return cls(
             users_seq=users_seq,
             question_seq=question_seq,

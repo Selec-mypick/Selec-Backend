@@ -21,7 +21,7 @@ class QuestionRepository:
         return question
 
     @staticmethod
-    async def find_by_question_seq(db: AsyncSession, question_seq: int) -> Question | None:
+    async def find_by_question_seq(db: AsyncSession, question_seq: str) -> Question | None:
         result = await db.execute(
             select(Question).where(
                 Question.question_seq == question_seq,
@@ -31,7 +31,7 @@ class QuestionRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def find_by_question_seq_for_update(db: AsyncSession, question_seq: int) -> Question | None:
+    async def find_by_question_seq_for_update(db: AsyncSession, question_seq: str) -> Question | None:
         result = await db.execute(
             select(Question)
             .where(
@@ -45,7 +45,7 @@ class QuestionRepository:
     @staticmethod
     async def find_detail_by_question_seq(
             db: AsyncSession,
-            question_seq: int,
+            question_seq: str,
             users_seq: str,
     ) -> QuestionDetailDTO | None:
         vote_count_subquery = (
@@ -119,7 +119,7 @@ class QuestionRepository:
     @staticmethod
     async def find_result_options_by_question_seq(
             db: AsyncSession,
-            question_seq: int,
+            question_seq: str,
     ) -> list[VoteResultOptionRow]:
         result = await db.execute(
             select(Options, Users)

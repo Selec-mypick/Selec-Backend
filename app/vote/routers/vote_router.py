@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,7 +40,7 @@ _AUTH_ERRORS = (
 )
 async def create_vote_endpoint(
         request: CreateVoteRequest,
-        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        question_seq: UUID = Path(..., description="질문 UUID"),
         users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
@@ -47,7 +49,7 @@ async def create_vote_endpoint(
 
     동일 질문에 다시 투표하면 기존 선택지가 upsert로 갱신됩니다.
     """
-    await create_vote(question_seq, request, users_seq, db)
+    await create_vote(str(question_seq), request, users_seq, db)
     return BaseResponse.of_success(status.HTTP_201_CREATED)
 
 
@@ -65,7 +67,7 @@ async def create_vote_endpoint(
     },
 )
 async def get_vote_result_endpoint(
-        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        question_seq: UUID = Path(..., description="질문 UUID"),
         users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
@@ -74,7 +76,7 @@ async def get_vote_result_endpoint(
 
     익명 질문은 선택지별 집계만, 비익명 질문은 작성자 또는 투표자에게 투표자 목록까지 제공합니다.
     """
-    result = await get_vote_result(question_seq, users_seq, db)
+    result = await get_vote_result(str(question_seq), users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 
@@ -92,12 +94,12 @@ async def get_vote_result_endpoint(
     },
 )
 async def delete_vote_endpoint(
-        question_seq: int = Path(..., gt=0, description="질문 시퀀스"),
+        question_seq: UUID = Path(..., description="질문 UUID"),
         users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
     """
     본인이 남긴 투표를 취소(soft delete)합니다.
     """
-    await delete_vote(question_seq, users_seq, db)
+    await delete_vote(str(question_seq), users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK)
