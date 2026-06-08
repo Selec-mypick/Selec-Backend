@@ -11,12 +11,9 @@ services:
       MYSQL_USER: selec
       MYSQL_PASSWORD: "selec1!"
       TZ: Asia/Seoul
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-time-zone=+09:00
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./mysql/conf/my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - selec-network
 
