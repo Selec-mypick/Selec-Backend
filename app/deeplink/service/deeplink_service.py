@@ -2,6 +2,7 @@ import json
 from html import escape
 from pathlib import Path as FilePath
 from string import Template
+from urllib.parse import quote
 from uuid import UUID
 
 from config import settings
@@ -13,11 +14,13 @@ def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
     normalized = user_agent.lower()
     encoded_question_seq = escape(str(question_seq), quote=True)
     app_scheme_url = f"{settings.app_deeplink_scheme}://deeplink/{encoded_question_seq}"
+    android_fallback_url = quote(settings.app_android_install_url, safe="")
     android_intent_url = (
         f"intent://deeplink/{encoded_question_seq}"
         f"#Intent;"
         f"scheme={settings.app_deeplink_scheme};"
         f"package={settings.app_android_package_name};"
+        f"S.browser_fallback_url={android_fallback_url};"
         f"end"
     )
 
