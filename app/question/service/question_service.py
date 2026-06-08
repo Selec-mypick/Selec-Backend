@@ -14,12 +14,17 @@ from app.question.schema.response.question_response import (
     UpdateQuestionResponse,
 )
 from app.vote.repository.vote_repository import VoteRepository
+from config import settings
 
 
 async def create_question(request: CreateQuestionRequest, users_seq: str, db: AsyncSession) -> CreateQuestionResponse:
     async def create_question_action() -> CreateQuestionResponse:
+        question_seq = Question.generate_question_seq()
+        share_url = f"{settings.service_base_url}/q/{question_seq}"
         new_question = Question(
+            question_seq=question_seq,
             users_seq=users_seq,
+            share_url=share_url,
             title=request.title,
             description=request.description or None,
             is_anonymous=request.is_anonymous,
@@ -34,7 +39,10 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
             for option in request.options
         ]
         await OptionsRepository.save_all(db, options)
-        return CreateQuestionResponse(question_seq=saved_question.question_seq)
+        return CreateQuestionResponse(
+            question_seq=saved_question.question_seq,
+            share_url=saved_question.share_url,
+        )
 
     return await run_in_transaction(db, create_question_action, "질문 생성 중 오류가 발생했습니다")
 

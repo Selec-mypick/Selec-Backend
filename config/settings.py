@@ -101,6 +101,17 @@ class Settings:
         return self.get_env('GEMINI_API_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta')
 
     @property
+    def service_domain(self) -> str:
+        domain = self.get_env('SERVICE_DOMAIN')
+        if not domain:
+            raise ValueError(f"SERVICE_DOMAIN이 설정되지 않았습니다. ({self.active_profile} 환경)")
+        return domain.strip().removeprefix("https://").removeprefix("http://").rstrip("/")
+
+    @property
+    def service_base_url(self) -> str:
+        return f"https://{self.service_domain}"
+
+    @property
     def scheduler_enabled(self) -> bool:
         return self.get_env('SCHEDULER_ENABLED', 'true').lower() in ('true', '1', 'yes')
 

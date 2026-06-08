@@ -12,6 +12,7 @@ class QuestionOptionResponse(BaseModel):
 
 class CreateQuestionResponse(BaseModel):
     question_seq: str
+    share_url: str
 
 
 class UpdateQuestionResponse(BaseModel):
@@ -20,6 +21,7 @@ class UpdateQuestionResponse(BaseModel):
 
 class GetQuestionResponse(BaseModel):
     question_seq: str
+    share_url: str
     title: str
     description: str | None
     is_anonymous: bool
@@ -42,6 +44,7 @@ class GetQuestionResponse(BaseModel):
     ) -> "GetQuestionResponse":
         return cls(
             question_seq=question.question_seq,
+            share_url=question.share_url,
             title=question.title,
             description=question.description,
             is_anonymous=question.is_anonymous,
@@ -81,6 +84,7 @@ class GetQuestionResponse(BaseModel):
 
         return cls(
             question_seq=detail.question.question_seq,
+            share_url=detail.question.share_url,
             title=detail.question.title,
             description=detail.question.description,
             is_anonymous=detail.question.is_anonymous,
