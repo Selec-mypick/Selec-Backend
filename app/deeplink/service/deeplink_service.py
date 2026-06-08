@@ -1,14 +1,26 @@
+import json
 from html import escape
 from pathlib import Path as FilePath
 from string import Template
+from uuid import UUID
 
 from config import settings
 
 TEMPLATE_PATH = FilePath(__file__).resolve().parents[1] / "templates" / "question_install.html"
 
 
-def render_question_install_page(user_agent: str) -> str:
+def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
     normalized = user_agent.lower()
+    encoded_question_seq = escape(str(question_seq), quote=True)
+    app_scheme_url = f"{settings.app_deeplink_scheme}://deeplink/{encoded_question_seq}"
+    android_intent_url = (
+        f"intent://deeplink/{encoded_question_seq}"
+        f"#Intent;"
+        f"scheme={settings.app_deeplink_scheme};"
+        f"package={settings.app_android_package_name};"
+        f"end"
+    )
+
     if "iphone" in normalized or "ipad" in normalized or "ipod" in normalized:
         context = {
             "platform_message": "iPhone에서 Selec 앱으로 질문을 열 수 있습니다.",
@@ -33,4 +45,8 @@ def render_question_install_page(user_agent: str) -> str:
         platform_message=escape(context["platform_message"]),
         primary_install_url=escape(context["primary_install_url"], quote=True),
         primary_button_label=escape(context["primary_button_label"]),
+        app_scheme_url=json.dumps(app_scheme_url),
+        android_intent_url=json.dumps(android_intent_url),
+        android_install_url=json.dumps(settings.app_android_install_url),
+        ios_install_url=json.dumps(settings.app_ios_install_url),
     )

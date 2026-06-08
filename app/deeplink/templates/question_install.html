@@ -86,7 +86,9 @@
 
         .primary-action {
             margin-top: 16px;
+            width: 100%;
             min-height: 54px;
+            border: 0;
             border-radius: 8px;
             background: #2563eb;
             color: #ffffff;
@@ -96,6 +98,22 @@
             text-decoration: none;
             font-size: 16px;
             font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .store-link {
+            margin-top: 12px;
+            min-height: 46px;
+            border-radius: 8px;
+            border: 1px solid #d7deea;
+            color: #344054;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 750;
         }
 
         .steps {
@@ -161,15 +179,16 @@
     <section class="install-card" aria-label="Selec 앱 이동 안내">
         <div class="guide">
             <p class="platform">$platform_message</p>
-            <a class="primary-action" href="$primary_install_url">$primary_button_label</a>
+            <button class="primary-action" type="button" onclick="openApp()">앱으로 열기</button>
+            <a class="store-link" href="$primary_install_url">$primary_button_label</a>
             <ol class="steps">
                 <li>
                     <span class="step-number">1</span>
-                    <span>앱을 설치하거나 업데이트합니다.</span>
+                    <span>앱이 설치되어 있으면 자동으로 질문 화면이 열립니다.</span>
                 </li>
                 <li>
                     <span class="step-number">2</span>
-                    <span>설치가 끝나면 공유받은 링크를 다시 열어 질문으로 이동합니다.</span>
+                    <span>열리지 않으면 앱 설치 후 공유받은 링크를 다시 열어주세요.</span>
                 </li>
             </ol>
         </div>
@@ -177,5 +196,36 @@
 
     <p class="footer-note">앱이 이미 설치되어 있는데 이동하지 않는다면 브라우저의 열기 메뉴에서 Selec 앱을 선택해주세요.</p>
 </main>
+<script>
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isAndroid = userAgent.includes("android");
+    const isIOS = /iphone|ipad|ipod/.test(userAgent);
+
+    const appSchemeUrl = $app_scheme_url;
+    const androidIntentUrl = $android_intent_url;
+    const androidInstallUrl = $android_install_url;
+    const iosInstallUrl = $ios_install_url;
+
+    function openApp() {
+        if (isAndroid) {
+            window.location.href = androidIntentUrl;
+            return;
+        }
+
+        if (isIOS) {
+            window.location.href = appSchemeUrl;
+            setTimeout(() => {
+                window.location.href = iosInstallUrl;
+            }, 1500);
+            return;
+        }
+
+        window.location.href = androidInstallUrl;
+    }
+
+    window.addEventListener("load", () => {
+        setTimeout(openApp, 300);
+    });
+</script>
 </body>
 </html>
