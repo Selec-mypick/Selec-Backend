@@ -1,5 +1,6 @@
 aiohttp==3.10.11
 aiomysql==0.3.2
+cryptography==42.0.8
 fastapi==0.62.0
 pydantic==1.10.24
 python-dotenv==1.1.1
