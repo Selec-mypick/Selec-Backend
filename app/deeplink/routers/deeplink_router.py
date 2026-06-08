@@ -53,7 +53,6 @@ async def question_deeplink_fallback(
     template = Template(TEMPLATE_PATH.read_text(encoding="utf-8"))
 
     return template.safe_substitute(
-        question_id=escape(str(question_seq)),
         platform_message=escape(context["platform_message"]),
         primary_install_url=escape(context["primary_install_url"], quote=True),
         primary_button_label=escape(context["primary_button_label"]),
