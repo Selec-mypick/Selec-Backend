@@ -3,7 +3,6 @@ from uuid import uuid4
 from sqlalchemy import Column, Boolean, String
 
 from app.base.entity import BaseTimeEntity
-from app.core.utils import now
 
 
 class Users(BaseTimeEntity):
@@ -45,7 +44,3 @@ class Users(BaseTimeEntity):
         self.name = name
         self.profile_image = profile_image
         self.active = True
-
-    def update_nick_name(self, nick_name: str) -> None:
-        self.nick_name = nick_name
-        self.updated_at = now()

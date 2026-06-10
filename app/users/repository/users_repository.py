@@ -32,16 +32,6 @@ class UsersRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def find_by_nick_name(db: AsyncSession, nick_name: str) -> Users | None:
-        result = await db.execute(
-            select(Users).where(
-                Users.nick_name == nick_name,
-                Users.active.is_(True)
-            )
-        )
-        return result.scalar_one_or_none()
-
-    @staticmethod
     async def exists_by_nick_name(db: AsyncSession, nick_name: str) -> bool:
         result = await db.execute(
             select(Users.users_seq).where(

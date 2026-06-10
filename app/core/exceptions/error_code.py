@@ -48,7 +48,6 @@ class ErrorCode(Enum):
     RESOURCE_CONFLICT = ("CNF_001", 409, "리소스 충돌이 발생했습니다.")
     GOOGLE_REGISTER_CONFLICT = ("CNF_002", 409, "Google 계정 등록 중 충돌이 발생했습니다. 다시 시도해주세요.")
     TEST_USER_CREATE_CONFLICT = ("CNF_003", 409, "테스트 유저 생성 중 충돌이 발생했습니다.")
-    NICKNAME_ALREADY_USED = ("CNF_004", 409, "이미 사용 중인 닉네임입니다.")
     QUESTION_STALE = ("CNF_005", 409, "이미 수정된 질문입니다. 최신 질문 정보를 다시 조회해주세요.")
 
     # 500 Server

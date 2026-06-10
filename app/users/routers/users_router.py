@@ -5,9 +5,8 @@ from app.base.response import BaseResponse, PageResponse, api_errors
 from app.core.database import get_db
 from app.core.exceptions import ErrorCode
 from app.users.dependency.users_seq import get_users_seq
-from app.users.schema.request.users_request import UpdateMyInfoRequest
 from app.users.schema.response.users_response import GetMyInfoResponse, MyQuestionResponse
-from app.users.service.user_service import get_my_info, get_my_questions, update_my_info
+from app.users.service.user_service import get_my_info, get_my_questions
 
 router = APIRouter(prefix="/api/users", tags=["USERS"])
 
@@ -69,28 +68,3 @@ async def get_my_questions_endpoint(
     result = await get_my_questions(users_seq, page, size, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
 
-
-@router.put(
-    "",
-    response_model=BaseResponse[GetMyInfoResponse],
-    status_code=status.HTTP_200_OK,
-    responses={
-        **api_errors(
-            *_AUTH_ERRORS,
-            ErrorCode.VALIDATION_ERROR,
-            ErrorCode.USER_NOT_FOUND,
-            ErrorCode.NICKNAME_ALREADY_USED,
-            ErrorCode.INTERNAL_SERVER_ERROR,
-        ),
-    },
-)
-async def update_my_info_endpoint(
-        request: UpdateMyInfoRequest,
-        users_seq: str = Depends(get_users_seq),
-        db: AsyncSession = Depends(get_db),
-):
-    """
-    내 닉네임을 수정합니다.
-    """
-    result = await update_my_info(users_seq, request, db)
-    return BaseResponse.of_success(status.HTTP_200_OK, result)
