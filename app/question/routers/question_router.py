@@ -78,7 +78,7 @@ async def get_question_endpoint(
     """
     질문 상세와 선택지 목록을 조회합니다.
 
-    작성자이거나 해당 질문에 투표한 사용자에게만 선택지별 vote_count가 노출됩니다.
+    작성자이거나 해당 질문에 투표한 사용자에게만 선택지별 percentage가 노출됩니다.
     """
     result = await get_question(str(question_seq), users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)

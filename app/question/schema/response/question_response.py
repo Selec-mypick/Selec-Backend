@@ -7,7 +7,7 @@ class QuestionOptionResponse(BaseModel):
     options_seq: int
     question_seq: str
     content: str
-    vote_count: int | None = Field(default=None, description="투표 수")
+    percentage: float | None = Field(default=None, description="득표율")
 
 
 class CreateQuestionResponse(BaseModel):
@@ -41,6 +41,7 @@ class GetQuestionResponse(BaseModel):
             selected_option_seq: int | None = None,
             vote_counts: dict[int, int] | None = None,
     ) -> "GetQuestionResponse":
+        total_vote_count = sum(vote_counts.val업ues()) if vote_counts else 0
         return cls(
             question_seq=question.question_seq,
             share_url=question.share_url,
@@ -57,9 +58,9 @@ class GetQuestionResponse(BaseModel):
                     options_seq=option.options_seq,
                     question_seq=option.question_seq,
                     content=option.content,
-                    vote_count=(
-                        vote_counts.get(option.options_seq)
-                        if vote_counts and option.options_seq in vote_counts
+                    percentage=(
+                        _calculate_percentage(vote_counts.get(option.options_seq, 0), total_vote_count)
+                        if vote_counts is not None
                         else None
                     ),
                 )
@@ -78,7 +79,8 @@ class GetQuestionResponse(BaseModel):
             None,
         )
         is_creator = detail.question.users_seq == users_seq
-        can_view_vote_count = is_creator or selected_option_seq is not None
+        can_view_percentage = is_creator or selected_option_seq is not None
+        total_vote_count = sum(row.vote_count for row in detail.option_rows)
 
         return cls(
             question_seq=detail.question.question_seq,
@@ -96,8 +98,18 @@ class GetQuestionResponse(BaseModel):
                     options_seq=row.option.options_seq,
                     question_seq=row.option.question_seq,
                     content=row.option.content,
-                    vote_count=row.vote_count if can_view_vote_count else None,
+                    percentage=(
+                        _calculate_percentage(row.vote_count, total_vote_count)
+                        if can_view_percentage
+                        else None
+                    ),
                 )
                 for row in detail.option_rows
             ],
         )
+
+
+def _calculate_percentage(vote_count: int, total_vote_count: int) -> float:
+    if total_vote_count == 0:
+        return 0.0
+    return round((vote_count / total_vote_count) * 100, 1)
