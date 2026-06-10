@@ -39,7 +39,6 @@ class ErrorCode(Enum):
     # 403 Forbidden
     QUESTION_UPDATE_FORBIDDEN = ("FORB_001", 403, "질문 수정 권한이 없습니다.")
     QUESTION_DELETE_FORBIDDEN = ("FORB_002", 403, "질문 삭제 권한이 없습니다.")
-    VOTE_RESULT_FORBIDDEN = ("FORB_003", 403, "투표 후 결과를 조회할 수 있습니다.")
 
     # 404 Not Found
     USER_NOT_FOUND = ("NTF_001", 404, "존재하지 않는 사용자입니다.")
@@ -66,7 +65,6 @@ class ErrorCode(Enum):
     GEMINI_RESPONSE_NO_CANDIDATES = ("SRV_010", 500, "Gemini API 응답에 candidates가 없습니다.")
     GEMINI_RESPONSE_NO_TEXT = ("SRV_011", 500, "Gemini API 응답에서 text를 찾을 수 없습니다.")
     GEMINI_RESPONSE_INVALID_JSON = ("SRV_012", 500, "Gemini 응답이 JSON 형식이 아닙니다.")
-    GEMINI_RESPONSE_INVALID_ANONYMOUS = ("SRV_013", 500, "Gemini 응답의 is_anonymous 값은 true여야 합니다.")
     GEMINI_RESPONSE_INVALID_OPTIONS_TYPE = ("SRV_014", 500, "Gemini 응답의 options 값이 배열이 아닙니다.")
     GEMINI_RESPONSE_INVALID_OPTIONS_COUNT = ("SRV_015", 500, "Gemini 응답의 options 개수는 3개 이상 5개 이하이어야 합니다.")
     GEMINI_RESPONSE_INVALID_OPTIONS_ITEM = ("SRV_016", 500, "Gemini 응답의 options 항목이 올바르지 않습니다.")

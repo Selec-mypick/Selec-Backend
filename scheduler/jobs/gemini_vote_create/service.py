@@ -97,9 +97,6 @@ class GeminiVoteCreateJob:
                 message=f"{ErrorCode.GEMINI_RESPONSE_INVALID_JSON.message}. 응답값: {text}",
             )
 
-        if parsed.get("is_anonymous") is not True:
-            raise BaseAPIException(ErrorCode.GEMINI_RESPONSE_INVALID_ANONYMOUS)
-
         options = parsed.get("options")
         if not isinstance(options, list):
             raise BaseAPIException(ErrorCode.GEMINI_RESPONSE_INVALID_OPTIONS_TYPE)
@@ -117,7 +114,6 @@ class GeminiVoteCreateJob:
             return CreateQuestionRequest(
                 title=parsed.get("title"),
                 description=parsed.get("description"),
-                is_anonymous=True,
                 options=[option.strip() for option in options],
             )
         except ValidationError as e:

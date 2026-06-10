@@ -27,7 +27,6 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
             share_url=share_url,
             title=request.title,
             description=request.description or None,
-            is_anonymous=request.is_anonymous,
             status=QuestionStatus.OPEN.value,
             active=True,
             created_by=users_seq,
@@ -110,7 +109,6 @@ async def update_question(
         question.update(
             title=request.title,
             description=request.description,
-            is_anonymous=request.is_anonymous,
             updated_by=users_seq,
         )
 

@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 from app.options.models.options import Options
 from app.question.models.question import Question
-from app.users.models.users import Users
 
 
 @dataclass(frozen=True)
@@ -16,9 +15,3 @@ class QuestionOptionDetailRow:
 class QuestionDetailDTO:
     question: Question
     option_rows: list[QuestionOptionDetailRow]
-
-
-@dataclass(frozen=True)
-class VoteResultOptionRow:
-    option: Options
-    voter: Users | None

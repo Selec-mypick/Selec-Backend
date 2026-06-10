@@ -7,14 +7,12 @@
 {
   "title": "string",
   "description": "string",
-  "is_anonymous": true,
   "options": ["string", "string", "string"]
 }
 
 생성 규칙:
 - title은 자연스러운 한국어 투표 질문이어야 합니다.
 - description은 투표 목적을 설명하는 짧은 한 문장이어야 합니다.
-- is_anonymous는 항상 true입니다.
 - options는 3개 이상 5개 이하로 작성하세요.
 - options의 각 항목은 20자 이하의 한국어 문자열이어야 합니다.
 - options는 서로 의미가 겹치지 않아야 합니다.

@@ -24,7 +24,6 @@ class GetQuestionResponse(BaseModel):
     share_url: str
     title: str
     description: str | None
-    is_anonymous: bool
     status: str
     version: int
     is_creator: bool
@@ -47,7 +46,6 @@ class GetQuestionResponse(BaseModel):
             share_url=question.share_url,
             title=question.title,
             description=question.description,
-            is_anonymous=question.is_anonymous,
             status=question.status,
             version=question.version,
             is_creator=is_creator,
@@ -87,7 +85,6 @@ class GetQuestionResponse(BaseModel):
             share_url=detail.question.share_url,
             title=detail.question.title,
             description=detail.question.description,
-            is_anonymous=detail.question.is_anonymous,
             status=detail.question.status,
             version=detail.question.version,
             is_creator=is_creator,

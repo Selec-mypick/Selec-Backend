@@ -7,7 +7,6 @@ from app.question.constants.question_status import QuestionStatus
 from app.question.repository.question_repository import QuestionRepository
 from app.vote.repository.vote_repository import VoteRepository
 from app.vote.schema.request.vote_request import CreateVoteRequest
-from app.vote.schema.response.vote_response import GetVoteResultResponse
 
 
 async def create_vote(question_seq: str, request: CreateVoteRequest, users_seq: str, db: AsyncSession) -> None:
@@ -31,20 +30,6 @@ async def create_vote(question_seq: str, request: CreateVoteRequest, users_seq: 
         )
 
     await run_in_transaction(db, create_vote_action, "투표 저장 중 오류가 발생했습니다")
-
-
-async def get_vote_result(question_seq: str, users_seq: str, db: AsyncSession) -> GetVoteResultResponse:
-    question = await QuestionRepository.find_by_question_seq(db, question_seq)
-    if question is None:
-        raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
-
-    if not question.is_anonymous:
-        is_creator = question.users_seq == users_seq
-        if not is_creator and await VoteRepository.find_by_users_seq_and_question_seq(db, users_seq, question_seq) is None:
-            raise BaseAPIException(ErrorCode.VOTE_RESULT_FORBIDDEN)
-
-    option_rows = await QuestionRepository.find_result_options_by_question_seq(db, question_seq)
-    return GetVoteResultResponse.from_result_rows(option_rows, question.is_anonymous)
 
 
 async def delete_vote(question_seq: str, users_seq: str, db: AsyncSession) -> None:

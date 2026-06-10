@@ -6,9 +6,7 @@ from app.question.models.question import Question
 from app.question.repository.dto.question_repository_dto import (
     QuestionDetailDTO,
     QuestionOptionDetailRow,
-    VoteResultOptionRow,
 )
-from app.users.models.users import Users
 from app.vote.models.vote import Vote
 
 
@@ -115,36 +113,3 @@ class QuestionRepository:
             if option is not None
         ]
         return QuestionDetailDTO(question=question, option_rows=option_rows)
-
-    @staticmethod
-    async def find_result_options_by_question_seq(
-            db: AsyncSession,
-            question_seq: str,
-    ) -> list[VoteResultOptionRow]:
-        result = await db.execute(
-            select(Options, Users)
-            .outerjoin(
-                Vote,
-                and_(
-                    Vote.question_seq == question_seq,
-                    Vote.options_seq == Options.options_seq,
-                    Vote.active.is_(True),
-                ),
-            )
-            .outerjoin(
-                Users,
-                and_(
-                    Users.users_seq == Vote.users_seq,
-                    Users.active.is_(True),
-                ),
-            )
-            .where(
-                Options.question_seq == question_seq,
-                Options.active.is_(True),
-            )
-            .order_by(Options.options_seq.asc(), Vote.vote_seq.asc())
-        )
-        return [
-            VoteResultOptionRow(option=option, voter=voter)
-            for option, voter in result.all()
-        ]

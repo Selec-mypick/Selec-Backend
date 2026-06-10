@@ -8,8 +8,7 @@ from app.core.database import get_db
 from app.core.exceptions import ErrorCode
 from app.users.dependency.users_seq import get_users_seq
 from app.vote.schema.request.vote_request import CreateVoteRequest
-from app.vote.schema.response.vote_response import GetVoteResultResponse
-from app.vote.service.vote_service import create_vote, delete_vote, get_vote_result
+from app.vote.service.vote_service import create_vote, delete_vote
 
 router = APIRouter(prefix="/api/vote", tags=["VOTE"])
 
@@ -51,33 +50,6 @@ async def create_vote_endpoint(
     """
     await create_vote(str(question_seq), request, users_seq, db)
     return BaseResponse.of_success(status.HTTP_201_CREATED)
-
-
-@router.get(
-    "/{question_seq}/result",
-    response_model=BaseResponse[GetVoteResultResponse],
-    responses={
-        **api_errors(
-            *_AUTH_ERRORS,
-            ErrorCode.VALIDATION_ERROR,
-            ErrorCode.VOTE_RESULT_FORBIDDEN,
-            ErrorCode.QUESTION_NOT_FOUND,
-            ErrorCode.INTERNAL_SERVER_ERROR,
-        ),
-    },
-)
-async def get_vote_result_endpoint(
-        question_seq: UUID = Path(..., description="질문 UUID"),
-        users_seq: str = Depends(get_users_seq),
-        db: AsyncSession = Depends(get_db),
-):
-    """
-    질문의 투표 결과를 조회합니다.
-
-    익명 질문은 선택지별 집계만, 비익명 질문은 작성자 또는 투표자에게 투표자 목록까지 제공합니다.
-    """
-    result = await get_vote_result(str(question_seq), users_seq, db)
-    return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 
 @router.delete(

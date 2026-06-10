@@ -16,7 +16,6 @@ class Question(BaseAuditEntity):
 
     title = Column(String(1024), unique=False, nullable=False)
     description = Column(String(2048), nullable=True)
-    is_anonymous = Column(Boolean, nullable=False, default=True)
     status = Column(String(20), nullable=False, default=QuestionStatus.OPEN.value)
     active = Column(Boolean, nullable=False, default=True)
 
@@ -27,10 +26,9 @@ class Question(BaseAuditEntity):
     def generate_question_seq() -> str:
         return str(uuid4())
 
-    def update(self, title: str, description: str | None, is_anonymous: bool, updated_by: str) -> None:
+    def update(self, title: str, description: str | None, updated_by: str) -> None:
         self.title = title
         self.description = description or None
-        self.is_anonymous = is_anonymous
         self.updated_by = updated_by
         self.updated_at = now()
 
