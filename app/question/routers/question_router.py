@@ -11,11 +11,13 @@ from app.question.schema.request.question_request import CreateQuestionRequest, 
 from app.question.schema.response.question_response import (
     CreateQuestionResponse,
     GetQuestionResponse,
+    MyQuestionResponse,
     UpdateQuestionResponse,
 )
 from app.question.service.question_service import (
     create_question,
     delete_question,
+    get_my_questions,
     get_question,
     update_question,
 )
@@ -56,6 +58,29 @@ async def create_question_endpoint(
     """
     result = await create_question(request, users_seq, db)
     return BaseResponse.of_success(status.HTTP_201_CREATED, result)
+
+
+@router.get(
+    "/my",
+    response_model=BaseResponse[list[MyQuestionResponse]],
+    responses={
+        **api_errors(
+            *_AUTH_ERRORS,
+            ErrorCode.INTERNAL_SERVER_ERROR,
+        ),
+    },
+)
+async def get_my_questions_endpoint(
+        users_seq: str = Depends(get_users_seq),
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    내가 만든 질문 목록을 조회합니다.
+
+    선택지 목록은 포함하지 않고, 질문별 전체 투표 수만 함께 반환합니다.
+    """
+    result = await get_my_questions(users_seq, db)
+    return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 
 @router.get(

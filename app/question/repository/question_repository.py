@@ -41,6 +41,35 @@ class QuestionRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def find_all_by_users_seq_with_vote_count(db: AsyncSession, users_seq: str) -> list[tuple[Question, int]]:
+        vote_count_subquery = (
+            select(
+                Vote.question_seq.label("question_seq"),
+                func.count(Vote.vote_seq).label("vote_count"),
+            )
+            .where(Vote.active.is_(True))
+            .group_by(Vote.question_seq)
+            .subquery()
+        )
+
+        result = await db.execute(
+            select(
+                Question,
+                func.coalesce(vote_count_subquery.c.vote_count, 0),
+            )
+            .outerjoin(
+                vote_count_subquery,
+                vote_count_subquery.c.question_seq == Question.question_seq,
+            )
+            .where(
+                Question.users_seq == users_seq,
+                Question.active.is_(True),
+            )
+            .order_by(Question.created_at.desc())
+        )
+        return result.all()
+
+    @staticmethod
     async def find_detail_by_question_seq(
             db: AsyncSession,
             question_seq: str,
