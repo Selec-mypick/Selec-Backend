@@ -8,7 +8,7 @@ from app.deeplink.service import render_question_install_page
 router = APIRouter(tags=["DEEPLINK"])
 
 
-@router.get("/deeplink/{question_seq}", response_class=HTMLResponse)
+@router.get("/deeplink/{question_seq}", response_class=HTMLResponse, include_in_schema=False)
 async def question_deeplink_fallback(
         request: Request,
         question_seq: UUID = Path(..., description="질문 UUID"),
