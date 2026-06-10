@@ -17,6 +17,7 @@ from app.core.database.transaction import run_in_transaction
 from app.core.exceptions import BaseAPIException, ErrorCode
 from app.users.repository.users_repository import UsersRepository
 from app.users.models.users import Users
+from app.users.service.nickname_generator import generate_unique_nickname
 
 GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 
@@ -37,12 +38,19 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
         raise BaseAPIException(ErrorCode.GOOGLE_USER_NOT_FOUND)
 
     async def upsert_google_user() -> str:
+        existing_users = await UsersRepository.find_by_google_id(db, google_id)
+        nick_name = (
+            existing_users.nick_name
+            if existing_users is not None and existing_users.nick_name is not None
+            else await generate_unique_nickname(db, google_id)
+        )
         users = await UsersRepository.upsert_by_google(
             db=db,
             google_id=google_id,
             email=google_user.get("email"),
             name=google_user.get("name"),
             profile_image=google_user.get("picture"),
+            nick_name=nick_name,
         )
         return users.users_seq
 
@@ -82,8 +90,8 @@ async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
             email=f"{google_id}@test.local",
             name="테스트 유저",
             profile_image=None,
+            nick_name=nick_name,
         )
-        users.nick_name = nick_name
         return await UsersRepository.save(db, users)
 
     users = await run_in_transaction(

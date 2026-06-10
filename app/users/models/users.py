@@ -11,7 +11,7 @@ class Users(BaseTimeEntity):
 
     users_seq = Column(String(36), primary_key=True, default=lambda: str(uuid4()), index=True)
     google_id = Column(String(128), unique=True, nullable=False, index=True)
-    nick_name = Column(String(20), unique=True, nullable=True, index=True)
+    nick_name = Column(String(128), unique=True, nullable=True, index=True)
     email = Column(String(256), nullable=True)
     name = Column(String(128), nullable=True)
     profile_image = Column(String(2048), nullable=True)
@@ -24,9 +24,11 @@ class Users(BaseTimeEntity):
             email: str | None,
             name: str | None,
             profile_image: str | None,
+            nick_name: str | None = None,
     ) -> "Users":
         return cls(
             google_id=google_id,
+            nick_name=nick_name,
             email=email,
             name=name,
             profile_image=profile_image,
