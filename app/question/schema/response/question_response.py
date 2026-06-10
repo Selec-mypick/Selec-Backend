@@ -27,6 +27,7 @@ class GetQuestionResponse(BaseModel):
     status: str
     version: int
     is_creator: bool
+    vote_count: int | None = Field(default=None, description="전체 투표자 수")
     created_at: datetime
     updated_at: datetime
     selected_option_seq: int | None = None
@@ -54,6 +55,7 @@ class GetQuestionResponse(BaseModel):
             status=detail.question.status,
             version=detail.question.version,
             is_creator=is_creator,
+            vote_count=total_vote_count if is_creator else None,
             created_at=detail.question.created_at,
             updated_at=detail.question.updated_at,
             selected_option_seq=selected_option_seq,
