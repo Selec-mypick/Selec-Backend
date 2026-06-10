@@ -41,7 +41,22 @@ class QuestionRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def find_all_by_users_seq_with_vote_count(db: AsyncSession, users_seq: str) -> list[tuple[Question, int]]:
+    async def count_by_users_seq(db: AsyncSession, users_seq: str) -> int:
+        result = await db.execute(
+            select(func.count(Question.question_seq)).where(
+                Question.users_seq == users_seq,
+                Question.active.is_(True),
+            )
+        )
+        return result.scalar_one()
+
+    @staticmethod
+    async def find_all_by_users_seq_with_vote_count(
+            db: AsyncSession,
+            users_seq: str,
+            page: int,
+            size: int,
+    ) -> list[tuple[Question, int]]:
         vote_count_subquery = (
             select(
                 Vote.question_seq.label("question_seq"),
@@ -66,6 +81,8 @@ class QuestionRepository:
                 Question.active.is_(True),
             )
             .order_by(Question.created_at.desc())
+            .offset((page - 1) * size)
+            .limit(size)
         )
         return result.all()
 

@@ -1,9 +1,9 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.base.response import BaseResponse, api_errors
+from app.base.response import BaseResponse, PageResponse, api_errors
 from app.core.database import get_db
 from app.core.exceptions import ErrorCode
 from app.users.dependency.users_seq import get_users_seq
@@ -62,15 +62,18 @@ async def create_question_endpoint(
 
 @router.get(
     "/my",
-    response_model=BaseResponse[list[MyQuestionResponse]],
+    response_model=BaseResponse[PageResponse[MyQuestionResponse]],
     responses={
         **api_errors(
             *_AUTH_ERRORS,
+            ErrorCode.VALIDATION_ERROR,
             ErrorCode.INTERNAL_SERVER_ERROR,
         ),
     },
 )
 async def get_my_questions_endpoint(
+        page: int = Query(1, ge=1, description="페이지 번호"),
+        size: int = Query(20, ge=1, le=100, description="페이지 크기"),
         users_seq: str = Depends(get_users_seq),
         db: AsyncSession = Depends(get_db),
 ):
@@ -79,7 +82,7 @@ async def get_my_questions_endpoint(
 
     선택지 목록은 포함하지 않고, 질문별 전체 투표 수만 함께 반환합니다.
     """
-    result = await get_my_questions(users_seq, db)
+    result = await get_my_questions(users_seq, page, size, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 

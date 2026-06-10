@@ -38,7 +38,7 @@ class MyQuestionResponse(BaseModel):
             description=question.description,
             status=question.status,
             version=question.version,
-            vote_count=vote_count,
+            vote_count=int(vote_count),
             created_at=question.created_at,
         )
 

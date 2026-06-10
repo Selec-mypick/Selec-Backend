@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.base.response import PageResponse
 from app.core.database.transaction import run_in_transaction
 from app.core.exceptions import BaseAPIException, ErrorCode
 from app.options.models.options import Options
@@ -62,12 +63,14 @@ async def get_question(question_seq: str, users_seq: str, db: AsyncSession) -> G
     return await run_in_transaction(db, get_question_action, "질문 조회 중 오류가 발생했습니다")
 
 
-async def get_my_questions(users_seq: str, db: AsyncSession) -> list[MyQuestionResponse]:
-    questions = await QuestionRepository.find_all_by_users_seq_with_vote_count(db, users_seq)
-    return [
+async def get_my_questions(users_seq: str, page: int, size: int, db: AsyncSession) -> PageResponse[MyQuestionResponse]:
+    total_elements = await QuestionRepository.count_by_users_seq(db, users_seq)
+    questions = await QuestionRepository.find_all_by_users_seq_with_vote_count(db, users_seq, page, size)
+    content = [
         MyQuestionResponse.from_entity(question, vote_count)
         for question, vote_count in questions
     ]
+    return PageResponse.of(content, page, size, total_elements)
 
 
 async def update_question(
