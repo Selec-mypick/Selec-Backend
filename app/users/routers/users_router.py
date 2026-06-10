@@ -22,7 +22,7 @@ _AUTH_ERRORS = (
 
 
 @router.get(
-    "/me",
+    "/profile",
     response_model=BaseResponse[GetMyInfoResponse],
     status_code=status.HTTP_200_OK,
     responses={
