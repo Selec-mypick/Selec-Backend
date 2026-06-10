@@ -17,6 +17,7 @@ from app.question.schema.response.question_response import (
 from app.question.service.question_service import (
     create_question,
     delete_question,
+    get_invited_questions,
     get_my_questions,
     get_question,
     update_question,
@@ -79,6 +80,30 @@ async def get_my_questions_endpoint(
     내가 만든 질문 목록을 페이지로 조회합니다.
     """
     result = await get_my_questions(users_seq, page, size, db)
+    return BaseResponse.of_success(status.HTTP_200_OK, result)
+
+
+@router.get(
+    "/invited",
+    response_model=BaseResponse[PageResponse[GetQuestionResponse]],
+    responses={
+        **api_errors(
+            *_AUTH_ERRORS,
+            ErrorCode.VALIDATION_ERROR,
+            ErrorCode.INTERNAL_SERVER_ERROR,
+        ),
+    },
+)
+async def get_invited_questions_endpoint(
+        page: int = Query(1, ge=1, description="페이지 번호"),
+        size: int = Query(20, ge=1, le=100, description="페이지 크기"),
+        users_seq: str = Depends(get_users_seq),
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    초대된 질문 목록을 페이지로 조회합니다.
+    """
+    result = await get_invited_questions(users_seq, page, size, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
 
 

@@ -3,10 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.options.models.options import Options
 from app.question.models.question import Question
-from app.question.repository.dto.question_repository_dto import (
-    QuestionDetailDTO,
-    QuestionOptionDetailRow,
-)
+from app.question_invited.models.question_invited import QuestionInvited
 from app.vote.models.vote import Vote
 
 
@@ -87,11 +84,124 @@ class QuestionRepository:
         return result.all()
 
     @staticmethod
-    async def find_detail_by_question_seq(
+    async def count_invited_by_users_seq(db: AsyncSession, users_seq: str) -> int:
+        result = await db.execute(
+            select(func.count(QuestionInvited.question_invited_seq))
+            .join(
+                Question,
+                Question.question_seq == QuestionInvited.question_seq,
+            )
+            .where(
+                QuestionInvited.users_seq == users_seq,
+                QuestionInvited.active.is_(True),
+                Question.active.is_(True),
+            )
+        )
+        return result.scalar_one()
+
+    @staticmethod
+    async def find_invited_question_seqs_by_users_seq(
+            db: AsyncSession,
+            users_seq: str,
+            page: int,
+            size: int,
+    ) -> list[str]:
+        result = await db.execute(
+            select(QuestionInvited.question_seq)
+            .join(
+                Question,
+                Question.question_seq == QuestionInvited.question_seq,
+            )
+            .where(
+                QuestionInvited.users_seq == users_seq,
+                QuestionInvited.active.is_(True),
+                Question.active.is_(True),
+            )
+            .order_by(QuestionInvited.created_at.desc())
+            .offset((page - 1) * size)
+            .limit(size)
+        )
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def find_details_by_question_seqs(
+            db: AsyncSession,
+            question_seqs: list[str],
+            users_seq: str,
+    ):
+        if not question_seqs:
+            return []
+
+        vote_count_subquery = (
+            select(
+                Vote.question_seq.label("question_seq"),
+                Vote.options_seq.label("options_seq"),
+                func.count(Vote.vote_seq).label("vote_count"),
+            )
+            .where(
+                Vote.question_seq.in_(question_seqs),
+                Vote.active.is_(True),
+            )
+            .group_by(Vote.question_seq, Vote.options_seq)
+            .subquery()
+        )
+
+        user_vote_subquery = (
+            select(
+                Vote.question_seq.label("question_seq"),
+                Vote.options_seq.label("options_seq"),
+            )
+            .where(
+                Vote.question_seq.in_(question_seqs),
+                Vote.users_seq == users_seq,
+                Vote.active.is_(True),
+            )
+            .subquery()
+        )
+
+        result = await db.execute(
+            select(
+                Question,
+                Options,
+                func.coalesce(vote_count_subquery.c.vote_count, 0),
+                user_vote_subquery.c.options_seq,
+            )
+            .outerjoin(
+                Options,
+                and_(
+                    Options.question_seq == Question.question_seq,
+                    Options.active.is_(True),
+                ),
+            )
+            .outerjoin(
+                vote_count_subquery,
+                and_(
+                    vote_count_subquery.c.question_seq == Question.question_seq,
+                    vote_count_subquery.c.options_seq == Options.options_seq,
+                ),
+            )
+            .outerjoin(
+                user_vote_subquery,
+                and_(
+                    user_vote_subquery.c.question_seq == Question.question_seq,
+                    user_vote_subquery.c.options_seq == Options.options_seq,
+                ),
+            )
+            .where(
+                Question.question_seq.in_(question_seqs),
+                Question.active.is_(True),
+            )
+            .order_by(Options.options_seq.asc())
+        )
+
+        return result.all()
+
+    @staticmethod
+    async def find_detail_rows_by_question_seq(
             db: AsyncSession,
             question_seq: str,
             users_seq: str,
-    ) -> QuestionDetailDTO | None:
+    ):
         vote_count_subquery = (
             select(
                 Vote.options_seq.label("options_seq"),
@@ -144,18 +254,4 @@ class QuestionRepository:
             .order_by(Options.options_seq.asc())
         )
 
-        rows = result.all()
-        if not rows:
-            return None
-
-        question = rows[0][0]
-        option_rows = [
-            QuestionOptionDetailRow(
-                option=option,
-                vote_count=vote_count,
-                selected_option_seq=selected_option_seq,
-            )
-            for _, option, vote_count, selected_option_seq in rows
-            if option is not None
-        ]
-        return QuestionDetailDTO(question=question, option_rows=option_rows)
+        return result.all()

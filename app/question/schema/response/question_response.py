@@ -55,42 +55,44 @@ class GetQuestionResponse(BaseModel):
     options: list[QuestionOptionResponse]
 
     @classmethod
-    def from_detail_dto(cls, detail, users_seq: str) -> "GetQuestionResponse":
+    def from_detail_rows(cls, rows: list, users_seq: str) -> "GetQuestionResponse":
+        question = rows[0][0]
         selected_option_seq = next(
             (
-                row.selected_option_seq
-                for row in detail.option_rows
-                if row.selected_option_seq is not None
+                selected_option_seq
+                for _, _, _, selected_option_seq in rows
+                if selected_option_seq is not None
             ),
             None,
         )
-        is_creator = detail.question.users_seq == users_seq
+        is_creator = question.users_seq == users_seq
         can_view_percentage = is_creator or selected_option_seq is not None
-        total_vote_count = sum(row.vote_count for row in detail.option_rows)
+        total_vote_count = sum(vote_count for _, option, vote_count, _ in rows if option is not None)
 
         return cls(
-            question_seq=detail.question.question_seq,
-            share_url=detail.question.share_url,
-            title=detail.question.title,
-            description=detail.question.description,
-            version=detail.question.version,
+            question_seq=question.question_seq,
+            share_url=question.share_url,
+            title=question.title,
+            description=question.description,
+            version=question.version,
             is_creator=is_creator,
             vote_count=total_vote_count if is_creator else None,
-            created_at=detail.question.created_at,
-            updated_at=detail.question.updated_at,
+            created_at=question.created_at,
+            updated_at=question.updated_at,
             selected_option_seq=selected_option_seq,
             options=[
                 QuestionOptionResponse(
-                    options_seq=row.option.options_seq,
-                    question_seq=row.option.question_seq,
-                    content=row.option.content,
+                    options_seq=option.options_seq,
+                    question_seq=option.question_seq,
+                    content=option.content,
                     percentage=(
-                        _calculate_percentage(row.vote_count, total_vote_count)
+                        _calculate_percentage(vote_count, total_vote_count)
                         if can_view_percentage
                         else None
                     ),
                 )
-                for row in detail.option_rows
+                for _, option, vote_count, _ in rows
+                if option is not None
             ],
         )
 

@@ -50,13 +50,13 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
 
 async def get_question(question_seq: str, users_seq: str, db: AsyncSession) -> GetQuestionResponse:
     async def get_question_action() -> GetQuestionResponse:
-        question_detail = await QuestionRepository.find_detail_by_question_seq(db, question_seq, users_seq)
-        if question_detail is None:
+        question_detail_rows = await QuestionRepository.find_detail_rows_by_question_seq(db, question_seq, users_seq)
+        if not question_detail_rows:
             raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
 
         await QuestionInvitedRepository.upsert(db, question_seq, users_seq)
 
-        return GetQuestionResponse.from_detail_dto(question_detail, users_seq)
+        return GetQuestionResponse.from_detail_rows(question_detail_rows, users_seq)
 
     return await run_in_transaction(db, get_question_action, "질문 조회 중 오류가 발생했습니다")
 
@@ -67,6 +67,30 @@ async def get_my_questions(users_seq: str, page: int, size: int, db: AsyncSessio
     content = [
         MyQuestionResponse.from_entity(question, vote_count)
         for question, vote_count in questions
+    ]
+    return PageResponse.of(content, page, size, total_elements)
+
+
+async def get_invited_questions(users_seq: str, page: int, size: int, db: AsyncSession) -> PageResponse[GetQuestionResponse]:
+    total_elements = await QuestionRepository.count_invited_by_users_seq(db, users_seq)
+    question_seqs = await QuestionRepository.find_invited_question_seqs_by_users_seq(db, users_seq, page, size)
+    question_detail_rows = await QuestionRepository.find_details_by_question_seqs(db, question_seqs, users_seq)
+
+    question_detail_rows_by_seq = {}
+    for question, option, vote_count, selected_option_seq in question_detail_rows:
+        question_seq = question.question_seq
+        if question_seq not in question_detail_rows_by_seq:
+            question_detail_rows_by_seq[question_seq] = []
+        question_detail_rows_by_seq[question_seq].append((question, option, vote_count, selected_option_seq))
+
+    question_detail_rows_list = [
+        question_detail_rows_by_seq[question_seq]
+        for question_seq in question_seqs
+        if question_seq in question_detail_rows_by_seq
+    ]
+    content = [
+        GetQuestionResponse.from_detail_rows(rows, users_seq)
+        for rows in question_detail_rows_list
     ]
     return PageResponse.of(content, page, size, total_elements)
 

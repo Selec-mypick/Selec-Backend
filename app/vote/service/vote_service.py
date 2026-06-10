@@ -27,11 +27,11 @@ async def create_vote(question_seq: str, request: CreateVoteRequest, users_seq: 
             options_seq=request.options_seq,
         )
 
-        question_detail = await QuestionRepository.find_detail_by_question_seq(db, question_seq, users_seq)
-        if question_detail is None:
+        question_detail_rows = await QuestionRepository.find_detail_rows_by_question_seq(db, question_seq, users_seq)
+        if not question_detail_rows:
             raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
 
-        return GetQuestionResponse.from_detail_dto(question_detail, users_seq)
+        return GetQuestionResponse.from_detail_rows(question_detail_rows, users_seq)
 
     return await run_in_transaction(db, create_vote_action, "투표 저장 중 오류가 발생했습니다")
 
