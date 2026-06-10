@@ -39,9 +39,7 @@ async def get_my_info_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    로그인한 사용자의 프로필 정보를 조회합니다.
-
-    JWT에서 추출한 users_seq 기준으로 nick_name 등 내 정보를 반환합니다.
+    내 프로필 정보를 조회합니다.
     """
     result = await get_my_info(users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
@@ -67,9 +65,7 @@ async def update_my_info_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    로그인한 사용자의 닉네임을 수정합니다.
-
-    다른 사용자가 이미 사용 중인 nick_name은 등록할 수 없습니다.
+    내 닉네임을 수정합니다.
     """
     result = await update_my_info(users_seq, request, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)

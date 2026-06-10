@@ -45,8 +45,6 @@ async def create_vote_endpoint(
 ):
     """
     질문에 투표하거나 선택지를 변경합니다.
-
-    동일 질문에 다시 투표하면 기존 선택지가 upsert로 갱신됩니다.
     """
     result = await create_vote(str(question_seq), request, users_seq, db)
     return BaseResponse.of_success(status.HTTP_201_CREATED, result)
@@ -71,7 +69,7 @@ async def delete_vote_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    본인이 남긴 투표를 취소(soft delete)합니다.
+    내 투표를 취소합니다.
     """
     await delete_vote(str(question_seq), users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK)

@@ -52,9 +52,7 @@ async def create_question_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    투표 질문과 선택지를 생성합니다.
-
-    질문 작성자는 JWT의 users_seq로 저장되며, 익명/공개 여부와 선택지 목록을 함께 등록합니다.
+    질문과 선택지를 생성합니다.
     """
     result = await create_question(request, users_seq, db)
     return BaseResponse.of_success(status.HTTP_201_CREATED, result)
@@ -78,9 +76,7 @@ async def get_my_questions_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    내가 만든 질문 목록을 조회합니다.
-
-    선택지 목록은 포함하지 않고, 질문별 전체 투표 수만 함께 반환합니다.
+    내가 만든 질문 목록을 페이지로 조회합니다.
     """
     result = await get_my_questions(users_seq, page, size, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
@@ -106,7 +102,7 @@ async def get_question_endpoint(
     """
     질문 상세와 선택지 목록을 조회합니다.
 
-    작성자이거나 해당 질문에 투표한 사용자에게만 선택지별 percentage가 노출됩니다.
+    조회한 사용자는 질문 초대 목록에 기록됩니다.
     """
     result = await get_question(str(question_seq), users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
@@ -138,7 +134,7 @@ async def update_question_endpoint(
     """
     질문 작성자가 질문/선택지를 수정합니다.
 
-    낙관적 락(version)으로 동시 수정을 막고, 종료된 투표나 이미 투표된 선택지는 수정할 수 없습니다.
+    낙관적 락(version)으로 동시 수정을 막고, 이미 투표된 선택지는 수정할 수 없습니다.
     """
     result = await update_question(str(question_seq), request, users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
@@ -164,9 +160,9 @@ async def delete_question_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    질문 작성자가 질문을 삭제(soft delete)합니다.
+    질문 작성자가 질문을 삭제합니다.
 
-    연결된 선택지와 투표도 함께 비활성화됩니다.
+    연결된 선택지, 투표, 초대 기록도 함께 비활성화됩니다.
     """
     await delete_question(str(question_seq), users_seq, db)
     return BaseResponse.of_success(status.HTTP_200_OK)

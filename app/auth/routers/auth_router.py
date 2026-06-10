@@ -27,10 +27,7 @@ async def create_test_user_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    개발/테스트용 사용자 계정을 생성하고 즉시 로그인 가능한 JWT를 발급합니다.
-
-    Google OAuth 없이 users 테이블에 테스트 유저를 저장한 뒤,
-    access token과 refresh token을 함께 반환합니다.
+    테스트 유저를 생성하고 토큰을 발급합니다.
     """
     result = await create_test_user(db)
     return BaseResponse.of_success(status.HTTP_201_CREATED, result)
@@ -54,9 +51,7 @@ async def issue_test_token_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    이미 존재하는 users_seq에 대해 테스트용 JWT를 재발급합니다.
-
-    기존 access token은 blacklist 처리되고, 새 access/refresh token이 발급됩니다.
+    기존 테스트 유저의 토큰을 재발급합니다.
     """
     result = await issue_test_token(request, db)
     return BaseResponse.of_success(status.HTTP_201_CREATED, result)
@@ -82,10 +77,7 @@ async def google_oauth_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    Google id_token으로 로그인하고 Selec JWT를 발급합니다.
-
-    Google 계정 정보로 users를 upsert한 뒤 access/refresh token을 발급합니다.
-    재로그인 시 이전 access token은 무효화됩니다.
+    Google id_token으로 로그인하고 토큰을 발급합니다.
     """
     result = await authenticate_google(request, db)
     return BaseResponse.of_success(status.HTTP_201_CREATED, result)
@@ -114,10 +106,7 @@ async def refresh_token_endpoint(
         db: AsyncSession = Depends(get_db),
 ):
     """
-    refresh token으로 access/refresh token을 재발급합니다.
-
-    사용한 refresh token과 기존 access token은 blacklist 처리되며,
-    새 token pair가 발급됩니다.
+    refresh token으로 토큰을 재발급합니다.
     """
     result = await refresh_access_token(request, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
