@@ -41,7 +41,7 @@ class GetQuestionResponse(BaseModel):
             selected_option_seq: int | None = None,
             vote_counts: dict[int, int] | None = None,
     ) -> "GetQuestionResponse":
-        total_vote_count = sum(vote_counts.val업ues()) if vote_counts else 0
+        total_vote_count = sum(vote_counts.values()) if vote_counts else 0
         return cls(
             question_seq=question.question_seq,
             share_url=question.share_url,

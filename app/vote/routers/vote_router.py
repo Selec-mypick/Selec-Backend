@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.base.response import BaseResponse, api_errors
 from app.core.database import get_db
 from app.core.exceptions import ErrorCode
+from app.question.schema.response.question_response import GetQuestionResponse
 from app.users.dependency.users_seq import get_users_seq
 from app.vote.schema.request.vote_request import CreateVoteRequest
 from app.vote.service.vote_service import create_vote, delete_vote
@@ -24,7 +25,7 @@ _AUTH_ERRORS = (
 
 @router.post(
     "/{question_seq}",
-    response_model=BaseResponse,
+    response_model=BaseResponse[GetQuestionResponse],
     status_code=status.HTTP_201_CREATED,
     responses={
         **api_errors(
@@ -48,8 +49,8 @@ async def create_vote_endpoint(
 
     동일 질문에 다시 투표하면 기존 선택지가 upsert로 갱신됩니다.
     """
-    await create_vote(str(question_seq), request, users_seq, db)
-    return BaseResponse.of_success(status.HTTP_201_CREATED)
+    result = await create_vote(str(question_seq), request, users_seq, db)
+    return BaseResponse.of_success(status.HTTP_201_CREATED, result)
 
 
 @router.delete(

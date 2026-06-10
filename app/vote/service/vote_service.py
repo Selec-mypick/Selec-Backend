@@ -5,11 +5,12 @@ from app.core.exceptions import BaseAPIException, ErrorCode
 from app.options.repository.options_repository import OptionsRepository
 from app.question.constants.question_status import QuestionStatus
 from app.question.repository.question_repository import QuestionRepository
+from app.question.schema.response.question_response import GetQuestionResponse
 from app.vote.repository.vote_repository import VoteRepository
 from app.vote.schema.request.vote_request import CreateVoteRequest
 
 
-async def create_vote(question_seq: str, request: CreateVoteRequest, users_seq: str, db: AsyncSession) -> None:
+async def create_vote(question_seq: str, request: CreateVoteRequest, users_seq: str, db: AsyncSession) -> GetQuestionResponse:
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
         raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
@@ -21,7 +22,7 @@ async def create_vote(question_seq: str, request: CreateVoteRequest, users_seq: 
     if request.options_seq not in option_seqs:
         raise BaseAPIException(ErrorCode.OPTION_NOT_IN_QUESTION)
 
-    async def create_vote_action() -> None:
+    async def create_vote_action() -> GetQuestionResponse:
         await VoteRepository.upsert(
             db=db,
             users_seq=users_seq,
@@ -29,7 +30,13 @@ async def create_vote(question_seq: str, request: CreateVoteRequest, users_seq: 
             options_seq=request.options_seq,
         )
 
-    await run_in_transaction(db, create_vote_action, "투표 저장 중 오류가 발생했습니다")
+        question_detail = await QuestionRepository.find_detail_by_question_seq(db, question_seq, users_seq)
+        if question_detail is None:
+            raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
+
+        return GetQuestionResponse.from_detail_dto(question_detail, users_seq)
+
+    return await run_in_transaction(db, create_vote_action, "투표 저장 중 오류가 발생했습니다")
 
 
 async def delete_vote(question_seq: str, users_seq: str, db: AsyncSession) -> None:
