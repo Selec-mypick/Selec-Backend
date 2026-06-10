@@ -11,7 +11,6 @@ from app.question.schema.request.question_request import CreateQuestionRequest, 
 from app.question.schema.response.question_response import (
     CreateQuestionResponse,
     GetQuestionResponse,
-    MyQuestionResponse,
     UpdateQuestionResponse,
 )
 from app.question_invited.repository.question_invited_repository import QuestionInvitedRepository
@@ -59,16 +58,6 @@ async def get_question(question_seq: str, users_seq: str, db: AsyncSession) -> G
         return GetQuestionResponse.from_detail_rows(question_detail_rows, users_seq)
 
     return await run_in_transaction(db, get_question_action, "질문 조회 중 오류가 발생했습니다")
-
-
-async def get_my_questions(users_seq: str, page: int, size: int, db: AsyncSession) -> PageResponse[MyQuestionResponse]:
-    total_elements = await QuestionRepository.count_by_users_seq(db, users_seq)
-    questions = await QuestionRepository.find_all_by_users_seq_with_vote_count(db, users_seq, page, size)
-    content = [
-        MyQuestionResponse.from_entity(question, vote_count)
-        for question, vote_count in questions
-    ]
-    return PageResponse.of(content, page, size, total_elements)
 
 
 async def get_invited_questions(users_seq: str, page: int, size: int, db: AsyncSession) -> PageResponse[GetQuestionResponse]:

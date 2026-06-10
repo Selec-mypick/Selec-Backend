@@ -19,28 +19,6 @@ class UpdateQuestionResponse(BaseModel):
     version: int
 
 
-class MyQuestionResponse(BaseModel):
-    question_seq: str
-    share_url: str
-    title: str
-    description: str | None
-    version: int
-    vote_count: int
-    created_at: datetime
-
-    @classmethod
-    def from_entity(cls, question, vote_count: int) -> "MyQuestionResponse":
-        return cls(
-            question_seq=question.question_seq,
-            share_url=question.share_url,
-            title=question.title,
-            description=question.description,
-            version=question.version,
-            vote_count=int(vote_count),
-            created_at=question.created_at,
-        )
-
-
 class GetQuestionResponse(BaseModel):
     question_seq: str
     share_url: str
