@@ -90,6 +90,7 @@ def create_app() -> FastAPI:
         "/actuator/health",
         response_model=BaseResponse[HealthResponse],
         status_code=status.HTTP_200_OK,
+        include_in_schema=False,
         responses={
             **api_errors(ErrorCode.INTERNAL_SERVER_ERROR),
         },
