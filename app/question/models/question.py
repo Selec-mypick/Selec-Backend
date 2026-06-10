@@ -4,7 +4,6 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 
 from app.base.entity import BaseAuditEntity
 from app.core.utils import now
-from app.question.constants.question_status import QuestionStatus
 
 
 class Question(BaseAuditEntity):
@@ -16,7 +15,6 @@ class Question(BaseAuditEntity):
 
     title = Column(String(1024), unique=False, nullable=False)
     description = Column(String(2048), nullable=True)
-    status = Column(String(20), nullable=False, default=QuestionStatus.OPEN.value)
     active = Column(Boolean, nullable=False, default=True)
 
     version = Column(Integer, nullable=False, default=0)

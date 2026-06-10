@@ -3,7 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database.transaction import run_in_transaction
 from app.core.exceptions import BaseAPIException, ErrorCode
 from app.options.repository.options_repository import OptionsRepository
-from app.question.constants.question_status import QuestionStatus
 from app.question.repository.question_repository import QuestionRepository
 from app.question.schema.response.question_response import GetQuestionResponse
 from app.vote.repository.vote_repository import VoteRepository
@@ -14,8 +13,6 @@ async def create_vote(question_seq: str, request: CreateVoteRequest, users_seq: 
     question = await QuestionRepository.find_by_question_seq(db, question_seq)
     if question is None:
         raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
-    if question.status != QuestionStatus.OPEN.value:
-        raise BaseAPIException(ErrorCode.VOTE_ALREADY_CLOSED)
 
     options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
     option_seqs = {option.options_seq for option in options}

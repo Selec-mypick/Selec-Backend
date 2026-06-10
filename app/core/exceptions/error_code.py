@@ -29,7 +29,6 @@ class ErrorCode(Enum):
     GOOGLE_TOKEN_VERIFY_FAILED = ("BAD_001", 400, "Google id_token 검증 실패")
     GOOGLE_TOKEN_AUDIENCE_MISMATCH = ("BAD_002", 400, "Google id_token audience가 일치하지 않습니다.")
     GOOGLE_USER_NOT_FOUND = ("BAD_003", 400, "Google 사용자 정보를 확인할 수 없습니다.")
-    VOTE_ALREADY_CLOSED = ("BAD_004", 400, "이미 종료된 투표입니다.")
     OPTION_NOT_IN_QUESTION = ("BAD_005", 400, "질문에 속하지 않는 선택지입니다.")
     DUPLICATE_OPTION_SEQ = ("BAD_006", 400, "중복된 선택지 시퀀스가 포함되어 있습니다.")
     OPTION_HAS_VOTES = ("BAD_007", 400, "이미 투표가 존재하는 선택지는 수정할 수 없습니다.")

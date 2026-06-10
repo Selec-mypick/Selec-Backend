@@ -5,7 +5,6 @@ from app.core.database.transaction import run_in_transaction
 from app.core.exceptions import BaseAPIException, ErrorCode
 from app.options.models.options import Options
 from app.options.repository.options_repository import OptionsRepository
-from app.question.constants.question_status import QuestionStatus
 from app.question.models.question import Question
 from app.question.repository.question_repository import QuestionRepository
 from app.question.schema.request.question_request import CreateQuestionRequest, UpdateQuestionRequest
@@ -30,7 +29,6 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
             share_url=share_url,
             title=request.title,
             description=request.description or None,
-            status=QuestionStatus.OPEN.value,
             active=True,
             created_by=users_seq,
             updated_by=users_seq,
@@ -89,8 +87,6 @@ async def update_question(
             raise BaseAPIException(ErrorCode.QUESTION_UPDATE_FORBIDDEN)
         if question.version != request.version:
             raise BaseAPIException(ErrorCode.QUESTION_STALE)
-        if question.status != QuestionStatus.OPEN.value:
-            raise BaseAPIException(ErrorCode.VOTE_ALREADY_CLOSED)
 
         existing_options = await OptionsRepository.find_all_by_question_seq(db, question_seq)
         existing_options_by_seq = {

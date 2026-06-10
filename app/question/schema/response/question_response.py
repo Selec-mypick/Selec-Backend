@@ -24,7 +24,6 @@ class MyQuestionResponse(BaseModel):
     share_url: str
     title: str
     description: str | None
-    status: str
     version: int
     vote_count: int
     created_at: datetime
@@ -36,7 +35,6 @@ class MyQuestionResponse(BaseModel):
             share_url=question.share_url,
             title=question.title,
             description=question.description,
-            status=question.status,
             version=question.version,
             vote_count=int(vote_count),
             created_at=question.created_at,
@@ -48,7 +46,6 @@ class GetQuestionResponse(BaseModel):
     share_url: str
     title: str
     description: str | None
-    status: str
     version: int
     is_creator: bool
     vote_count: int | None = Field(default=None, description="전체 투표자 수")
@@ -76,7 +73,6 @@ class GetQuestionResponse(BaseModel):
             share_url=detail.question.share_url,
             title=detail.question.title,
             description=detail.question.description,
-            status=detail.question.status,
             version=detail.question.version,
             is_creator=is_creator,
             vote_count=total_vote_count if is_creator else None,

@@ -119,7 +119,6 @@ async def get_question_endpoint(
         **api_errors(
             *_AUTH_ERRORS,
             ErrorCode.VALIDATION_ERROR,
-            ErrorCode.VOTE_ALREADY_CLOSED,
             ErrorCode.DUPLICATE_OPTION_SEQ,
             ErrorCode.OPTION_NOT_IN_QUESTION,
             ErrorCode.OPTION_HAS_VOTES,
