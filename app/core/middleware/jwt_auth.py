@@ -61,6 +61,7 @@ class JWTAuthMiddleware:
                 raise BaseAPIException(ErrorCode.ACCESS_TOKEN_BLACKLISTED)
 
             scope.setdefault("state", {})["users_seq"] = users_seq
+            scope.setdefault("state", {})["access_token"] = token
             await self.app(scope, receive, send)
 
         except BaseAPIException as e:

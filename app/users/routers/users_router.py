@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, Header, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base.response import BaseResponse, PageResponse, api_errors
 from app.core.database import get_db
 from app.core.exceptions import ErrorCode
-from app.users.dependency.users_seq import get_users_seq
+from app.users.dependency.users_seq import get_access_token, get_users_seq
 from app.users.schema.request.users_request import LogoutRequest
 from app.users.schema.response.users_response import GetMyInfoResponse, MyQuestionResponse
 from app.users.service.user_service import get_my_info, get_my_questions, logout
@@ -85,12 +85,11 @@ async def get_my_questions_endpoint(
 )
 async def logout_endpoint(
         request: LogoutRequest,
-        authorization: str = Header(..., alias="Authorization"),
+        access_token: str = Depends(get_access_token),
         _users_seq: str = Depends(get_users_seq),
 ):
     """
     access token과 refresh token을 무효화합니다.
     """
-    access_token = authorization[7:].strip()
     await logout(request, access_token)
     return BaseResponse.of_success(status.HTTP_200_OK)
