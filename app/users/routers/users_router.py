@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base.response import BaseResponse, PageResponse, api_errors
 from app.core.database import get_db
 from app.core.exceptions import ErrorCode
 from app.users.dependency.users_seq import get_users_seq
+from app.users.schema.request.users_request import LogoutRequest
 from app.users.schema.response.users_response import GetMyInfoResponse, MyQuestionResponse
-from app.users.service.user_service import get_my_info, get_my_questions
+from app.users.service.user_service import get_my_info, get_my_questions, logout
 
 router = APIRouter(prefix="/api/users", tags=["USERS"])
 
@@ -68,3 +69,28 @@ async def get_my_questions_endpoint(
     result = await get_my_questions(users_seq, page, size, db)
     return BaseResponse.of_success(status.HTTP_200_OK, result)
 
+
+@router.post(
+    "/logout",
+    response_model=BaseResponse[dict],
+    status_code=status.HTTP_200_OK,
+    responses={
+        **api_errors(
+            *_AUTH_ERRORS,
+            ErrorCode.AUTH_HEADER_INVALID_FORMAT,
+            ErrorCode.VALIDATION_ERROR,
+            ErrorCode.TOKEN_STORE_FAILED,
+        ),
+    },
+)
+async def logout_endpoint(
+        request: LogoutRequest,
+        authorization: str = Header(..., alias="Authorization"),
+        _users_seq: str = Depends(get_users_seq),
+):
+    """
+    access token과 refresh token을 무효화합니다.
+    """
+    access_token = authorization[7:].strip()
+    await logout(request, access_token)
+    return BaseResponse.of_success(status.HTTP_200_OK)
