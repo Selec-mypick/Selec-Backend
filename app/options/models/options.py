@@ -31,8 +31,3 @@ class Options(BaseAuditEntity):
         self.active = True
         self.updated_by = updated_by
         self.updated_at = now()
-
-    def deactivate(self, updated_by: str) -> None:
-        self.active = False
-        self.updated_by = updated_by
-        self.updated_at = now()

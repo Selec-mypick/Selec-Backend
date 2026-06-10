@@ -13,6 +13,7 @@ from app.question.schema.response.question_response import (
     GetQuestionResponse,
     UpdateQuestionResponse,
 )
+from app.question_invited.repository.question_invited_repository import QuestionInvitedRepository
 from app.vote.repository.vote_repository import VoteRepository
 from config import settings
 
@@ -147,6 +148,7 @@ async def delete_question(question_seq: str, users_seq: str, db: AsyncSession) -
         question.deactivate(users_seq)
         await OptionsRepository.deactivate_by_question_seq(db, question_seq, users_seq)
         await VoteRepository.deactivate_by_question_seq(db, question_seq, users_seq)
+        await QuestionInvitedRepository.deactivate_by_question_seq(db, question_seq, users_seq)
 
     await run_in_transaction(
         db,

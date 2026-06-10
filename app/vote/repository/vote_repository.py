@@ -1,4 +1,4 @@
-from sqlalchemy import exists, func, select, update
+from sqlalchemy import exists, select, update
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,24 +62,6 @@ class VoteRepository:
             )
         )
         return result.scalar()
-
-    @staticmethod
-    async def count_by_question_seq_group_by_options_seq(db: AsyncSession, question_seq: str) -> dict[int, int]:
-        result = await db.execute(
-            select(
-                Vote.options_seq,
-                func.count(Vote.vote_seq),
-            )
-            .where(
-                Vote.question_seq == question_seq,
-                Vote.active.is_(True),
-            )
-            .group_by(Vote.options_seq)
-        )
-        return {
-            options_seq: count
-            for options_seq, count in result.all()
-        }
 
     @staticmethod
     async def find_by_users_seq_and_question_seq(

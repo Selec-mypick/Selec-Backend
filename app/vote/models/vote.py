@@ -21,23 +21,6 @@ class Vote(BaseAuditEntity):
     question = relationship("Question")
     option = relationship("Options")
 
-    @classmethod
-    def create(cls, users_seq: str, question_seq: str, options_seq: int) -> "Vote":
-        return cls(
-            users_seq=users_seq,
-            question_seq=question_seq,
-            options_seq=options_seq,
-            active=True,
-            created_by=users_seq,
-            updated_by=users_seq,
-        )
-
-    def update_option(self, options_seq: int, updated_by: str) -> None:
-        self.options_seq = options_seq
-        self.active = True
-        self.updated_by = updated_by
-        self.updated_at = now()
-
     def deactivate(self, updated_by: str) -> None:
         self.active = False
         self.updated_by = updated_by

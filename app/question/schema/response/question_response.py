@@ -33,42 +33,6 @@ class GetQuestionResponse(BaseModel):
     options: list[QuestionOptionResponse]
 
     @classmethod
-    def from_entity(
-            cls,
-            question,
-            options: list,
-            is_creator: bool,
-            selected_option_seq: int | None = None,
-            vote_counts: dict[int, int] | None = None,
-    ) -> "GetQuestionResponse":
-        total_vote_count = sum(vote_counts.values()) if vote_counts else 0
-        return cls(
-            question_seq=question.question_seq,
-            share_url=question.share_url,
-            title=question.title,
-            description=question.description,
-            status=question.status,
-            version=question.version,
-            is_creator=is_creator,
-            created_at=question.created_at,
-            updated_at=question.updated_at,
-            selected_option_seq=selected_option_seq,
-            options=[
-                QuestionOptionResponse(
-                    options_seq=option.options_seq,
-                    question_seq=option.question_seq,
-                    content=option.content,
-                    percentage=(
-                        _calculate_percentage(vote_counts.get(option.options_seq, 0), total_vote_count)
-                        if vote_counts is not None
-                        else None
-                    ),
-                )
-                for option in options
-            ],
-        )
-
-    @classmethod
     def from_detail_dto(cls, detail, users_seq: str) -> "GetQuestionResponse":
         selected_option_seq = next(
             (
