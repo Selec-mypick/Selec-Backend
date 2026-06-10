@@ -39,6 +39,7 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
             for option in request.options
         ]
         await OptionsRepository.save_all(db, options)
+        await QuestionInvitedRepository.upsert(db, saved_question.question_seq, users_seq)
         return CreateQuestionResponse(
             question_seq=saved_question.question_seq,
             share_url=saved_question.share_url,
@@ -48,11 +49,16 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
 
 
 async def get_question(question_seq: str, users_seq: str, db: AsyncSession) -> GetQuestionResponse:
-    question_detail = await QuestionRepository.find_detail_by_question_seq(db, question_seq, users_seq)
-    if question_detail is None:
-        raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
+    async def get_question_action() -> GetQuestionResponse:
+        question_detail = await QuestionRepository.find_detail_by_question_seq(db, question_seq, users_seq)
+        if question_detail is None:
+            raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
 
-    return GetQuestionResponse.from_detail_dto(question_detail, users_seq)
+        await QuestionInvitedRepository.upsert(db, question_seq, users_seq)
+
+        return GetQuestionResponse.from_detail_dto(question_detail, users_seq)
+
+    return await run_in_transaction(db, get_question_action, "질문 조회 중 오류가 발생했습니다")
 
 
 async def update_question(
