@@ -44,15 +44,6 @@ def create_app() -> FastAPI:
 
     setup_exception_handlers(app)
 
-    # CORS 설정
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
     app.add_middleware(
         JWTAuthMiddleware,
         allow_paths=(
@@ -63,6 +54,15 @@ def create_app() -> FastAPI:
     )
 
     app.add_middleware(RequestLoggingMiddleware)
+
+    # CORS는 가장 바깥(마지막 add)에 두어 preflight(OPTIONS)가 JWT보다 먼저 처리되게 한다.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials="*" not in settings.cors_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     app.include_router(auth_router)
     app.include_router(users_router)
