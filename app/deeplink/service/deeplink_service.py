@@ -13,6 +13,7 @@ _TEMPLATE = FilePath(__file__).resolve().parents[1] / "templates" / "question_in
 def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
     normalized = user_agent.lower()
     encoded_question_seq = escape(str(question_seq), quote=True)
+    share_url = f"{settings.service_base_url}/deeplink/{question_seq}"
 
     if "iphone" in normalized or "ipad" in normalized or "ipod" in normalized:
         web_url = f"{settings.app_ios_install_url.rstrip('/')}/deeplink/question/{question_seq}"
@@ -33,4 +34,5 @@ def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
     return Template(_TEMPLATE.read_text(encoding="utf-8")).safe_substitute(
         android_intent_url=json.dumps(android_intent_url),
         web_url=json.dumps(web_url),
+        share_url=json.dumps(share_url),
     )
