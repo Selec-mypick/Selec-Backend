@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#ffffff">
-    <title>Selec 앱에서 열기</title>
+    <title>Selec</title>
     <style>
         * {
             box-sizing: border-box;
@@ -25,207 +25,57 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: max(28px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+            padding: 28px 18px;
         }
 
         main {
-            width: min(100%, 430px);
-        }
-
-        .app-mark {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 22px;
-            border-radius: 18px;
-            background: #111318;
-            color: #ffffff;
-            display: grid;
-            place-items: center;
-            font-size: 31px;
-            font-weight: 800;
-            letter-spacing: 0;
-            box-shadow: 0 16px 34px rgba(17, 19, 24, 0.18);
-        }
-
-        .headline {
-            margin: 0;
-            font-size: 28px;
-            line-height: 1.22;
-            letter-spacing: 0;
             text-align: center;
         }
 
-        .description {
-            margin: 14px auto 0;
-            max-width: 342px;
-            color: #5f6673;
-            font-size: 16px;
-            line-height: 1.55;
-            text-align: center;
-        }
-
-        .install-card {
-            margin-top: 28px;
-            border: 1px solid #dde3ec;
-            border-radius: 8px;
-            background: #ffffff;
-            box-shadow: 0 18px 46px rgba(22, 30, 45, 0.08);
-            overflow: hidden;
-        }
-
-        .guide {
-            padding: 18px;
-        }
-
-        .platform {
-            margin: 0;
-            color: #475066;
-            font-size: 15px;
-            line-height: 1.55;
-        }
-
-        .primary-action {
-            margin-top: 16px;
-            width: 100%;
-            min-height: 54px;
-            border: 0;
-            border-radius: 8px;
-            background: #2563eb;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: 800;
-            font-family: inherit;
-            cursor: pointer;
-        }
-
-        .store-link {
-            margin-top: 12px;
-            min-height: 46px;
-            border-radius: 8px;
-            border: 1px solid #d7deea;
-            color: #344054;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 750;
-        }
-
-        .steps {
-            margin: 18px 0 0;
-            padding: 0;
-            list-style: none;
-            display: grid;
-            gap: 10px;
-        }
-
-        .steps li {
-            display: grid;
-            grid-template-columns: 24px 1fr;
-            gap: 10px;
-            color: #626b7d;
-            font-size: 13px;
-            line-height: 1.45;
-        }
-
-        .step-number {
-            width: 24px;
-            height: 24px;
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 20px;
+            border: 3px solid #dde3ec;
+            border-top-color: #2563eb;
             border-radius: 50%;
-            background: #eef2ff;
-            color: #3157d5;
-            display: grid;
-            place-items: center;
-            font-size: 12px;
-            font-weight: 800;
+            animation: spin 0.8s linear infinite;
         }
 
-        .footer-note {
-            margin: 16px auto 0;
-            max-width: 330px;
-            color: #8a92a2;
-            font-size: 12px;
-            line-height: 1.5;
-            text-align: center;
+        .message {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #475066;
         }
 
-        @media (max-width: 360px) {
-            body {
-                padding-left: 14px;
-                padding-right: 14px;
-            }
-
-            .headline {
-                font-size: 25px;
-            }
-
-            .description,
-            .platform {
-                font-size: 15px;
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
             }
         }
     </style>
 </head>
 <body>
 <main>
-    <div class="app-mark" aria-hidden="true">S</div>
-    <h1 class="headline">Selec 앱에서<br>공유된 투표를 열어보세요</h1>
-
-    <section class="install-card" aria-label="Selec 앱 이동 안내">
-        <div class="guide">
-            <p class="platform">$platform_message</p>
-            <button class="primary-action" type="button" onclick="openApp()">앱으로 열기</button>
-            $store_link_section
-            <ol class="steps">
-                <li>
-                    <span class="step-number">1</span>
-                    <span>앱이 설치되어 있으면 자동으로 질문 화면이 열립니다.</span>
-                </li>
-                <li>
-                    <span class="step-number">2</span>
-                    <span>열리지 않으면 앱 설치 후 공유받은 링크를 다시 열어주세요.</span>
-                </li>
-            </ol>
-        </div>
-    </section>
-
-    <p class="footer-note">앱이 이미 설치되어 있는데 이동하지 않는다면 브라우저의 열기 메뉴에서 Selec 앱을 선택해주세요.</p>
+    <div class="spinner" aria-hidden="true"></div>
+    <p class="message">이동 중입니다...</p>
 </main>
 <script>
     const userAgent = navigator.userAgent.toLowerCase();
     const isAndroid = userAgent.includes("android");
     const isIOS = /iphone|ipad|ipod/.test(userAgent);
 
-    const appSchemeUrl = $app_scheme_url;
     const androidIntentUrl = $android_intent_url;
-    const androidInstallUrl = $android_install_url;
-    const iosFallbackUrl = $ios_fallback_url;
+    const webUrl = $web_url;
 
-    function openApp() {
-        if (isAndroid) {
-            window.location.href = androidIntentUrl;
-            return;
-        }
-
-        if (isIOS) {
-            window.location.href = appSchemeUrl;
-            setTimeout(() => {
-                window.location.href = iosFallbackUrl;
-            }, 1500);
-            return;
-        }
-
-        window.location.href = androidInstallUrl;
+    if (isAndroid) {
+        window.location.replace(androidIntentUrl);
+    } else if (isIOS) {
+        window.location.replace(webUrl);
+    } else {
+        window.location.replace(webUrl);
     }
-
-    window.addEventListener("load", () => {
-        setTimeout(openApp, 300);
-    });
 </script>
 </body>
 </html>
