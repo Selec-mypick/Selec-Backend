@@ -112,16 +112,12 @@ class Settings:
         return f"https://{self.service_domain}"
 
     @property
-    def app_install_url(self) -> str:
-        return self.get_env('APP_INSTALL_URL', self.service_base_url)
-
-    @property
     def app_ios_install_url(self) -> str:
-        return self.get_env('APP_IOS_INSTALL_URL', self.app_install_url)
+        return self.get_env('APP_IOS_INSTALL_URL', self.service_base_url)
 
     @property
     def app_android_install_url(self) -> str:
-        return self.get_env('APP_ANDROID_INSTALL_URL', self.app_install_url)
+        return self.get_env('APP_ANDROID_INSTALL_URL', self.service_base_url)
 
     @property
     def app_deeplink_scheme(self) -> str:

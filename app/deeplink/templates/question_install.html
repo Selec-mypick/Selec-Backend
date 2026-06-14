@@ -204,7 +204,7 @@
     const appSchemeUrl = $app_scheme_url;
     const androidIntentUrl = $android_intent_url;
     const androidInstallUrl = $android_install_url;
-    const iosInstallUrl = $ios_install_url;
+    const iosFallbackUrl = $ios_fallback_url;
 
     function openApp() {
         if (isAndroid) {
@@ -215,7 +215,7 @@
         if (isIOS) {
             window.location.href = appSchemeUrl;
             setTimeout(() => {
-                window.location.href = iosInstallUrl;
+                window.location.href = iosFallbackUrl;
             }, 1500);
             return;
         }

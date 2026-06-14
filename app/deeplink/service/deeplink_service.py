@@ -8,6 +8,25 @@ from uuid import UUID
 from config import settings
 
 TEMPLATE_PATH = FilePath(__file__).resolve().parents[1] / "templates" / "question_install.html"
+MOBILE_ONLY_TEMPLATE_PATH = FilePath(__file__).resolve().parents[1] / "templates" / "mobile_only.html"
+
+
+def is_mobile_user_agent(user_agent: str) -> bool:
+    normalized = user_agent.lower()
+    return (
+        "iphone" in normalized
+        or "ipad" in normalized
+        or "ipod" in normalized
+        or "android" in normalized
+    )
+
+
+def render_mobile_only_page() -> str:
+    return MOBILE_ONLY_TEMPLATE_PATH.read_text(encoding="utf-8")
+
+
+def build_install_fallback_url(install_url: str, question_seq: UUID | str) -> str:
+    return f"{install_url.rstrip('/')}/deeplink/question/{question_seq}"
 
 
 def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
@@ -25,10 +44,11 @@ def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
     )
 
     if "iphone" in normalized or "ipad" in normalized or "ipod" in normalized:
+        ios_web_url = build_install_fallback_url(settings.app_ios_install_url, question_seq)
         context = {
-            "platform_message": "iPhone에서 Selec 앱으로 질문을 열 수 있습니다.",
-            "primary_install_url": settings.app_ios_install_url,
-            "primary_button_label": "App Store에서 설치",
+            "platform_message": "iPhone에서 Selec 앱으로 질문을 열 수 있습니다. 앱이 없으면 웹에서 확인할 수 있습니다.",
+            "primary_install_url": ios_web_url,
+            "primary_button_label": "웹에서 보기",
         }
     elif "android" in normalized:
         context = {
@@ -37,11 +57,7 @@ def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
             "primary_button_label": "Google Play에서 설치",
         }
     else:
-        context = {
-            "platform_message": "모바일 기기에서 Selec 앱을 설치하고 질문을 열어보세요.",
-            "primary_install_url": settings.app_install_url,
-            "primary_button_label": "앱 설치 페이지로 이동",
-        }
+        raise ValueError("모바일 User-Agent가 아닙니다.")
 
     template = Template(TEMPLATE_PATH.read_text(encoding="utf-8"))
     return template.safe_substitute(
@@ -51,5 +67,5 @@ def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
         app_scheme_url=json.dumps(app_scheme_url),
         android_intent_url=json.dumps(android_intent_url),
         android_install_url=json.dumps(settings.app_android_install_url),
-        ios_install_url=json.dumps(settings.app_ios_install_url),
+        ios_fallback_url=json.dumps(build_install_fallback_url(settings.app_ios_install_url, question_seq)),
     )
