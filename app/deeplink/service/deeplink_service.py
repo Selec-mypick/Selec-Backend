@@ -44,17 +44,17 @@ def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
     )
 
     if "iphone" in normalized or "ipad" in normalized or "ipod" in normalized:
-        ios_web_url = build_install_fallback_url(settings.app_ios_install_url, question_seq)
         context = {
-            "platform_message": "iPhone에서 Selec 앱으로 질문을 열 수 있습니다. 앱이 없으면 웹에서 확인할 수 있습니다.",
-            "primary_install_url": ios_web_url,
-            "primary_button_label": "웹에서 보기",
+            "platform_message": "iPhone에서 Selec 앱으로 질문을 열 수 있습니다.",
+            "store_link_section": "",
         }
     elif "android" in normalized:
+        android_install_url = escape(settings.app_android_install_url, quote=True)
         context = {
             "platform_message": "Android에서 Selec 앱으로 질문을 열 수 있습니다.",
-            "primary_install_url": settings.app_android_install_url,
-            "primary_button_label": "Google Play에서 설치",
+            "store_link_section": (
+                f'<a class="store-link" href="{android_install_url}">Google Play에서 설치</a>'
+            ),
         }
     else:
         raise ValueError("모바일 User-Agent가 아닙니다.")
@@ -62,8 +62,7 @@ def render_question_install_page(question_seq: UUID, user_agent: str) -> str:
     template = Template(TEMPLATE_PATH.read_text(encoding="utf-8"))
     return template.safe_substitute(
         platform_message=escape(context["platform_message"]),
-        primary_install_url=escape(context["primary_install_url"], quote=True),
-        primary_button_label=escape(context["primary_button_label"]),
+        store_link_section=context["store_link_section"],
         app_scheme_url=json.dumps(app_scheme_url),
         android_intent_url=json.dumps(android_intent_url),
         android_install_url=json.dumps(settings.app_android_install_url),
