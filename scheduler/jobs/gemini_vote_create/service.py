@@ -13,7 +13,6 @@ from app.question.schema.request.question_request import CreateQuestionRequest
 from app.question.service.question_service import create_question
 from config import settings
 from scheduler.client.gemini_client import GeminiClient
-from scheduler.jobs.gemini_vote_create.config import BATCH_USERS_SEQ
 
 logger = logging.getLogger(__name__)
 PROMPT_PATH = Path(__file__).resolve().parent / "prompt.txt"
@@ -26,11 +25,11 @@ class GeminiVoteCreateJob:
 
     def __init__(
             self,
-            users_seq: str = BATCH_USERS_SEQ,
+            users_seq: str | None = None,
             prompt_path: Path = PROMPT_PATH,
             model: str | None = None,
     ) -> None:
-        self.users_seq = users_seq
+        self.users_seq = users_seq or settings.scheduler_batch_users_seq
         self.prompt_path = prompt_path
         self.model = model or settings.gemini_model
 

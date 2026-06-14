@@ -136,6 +136,13 @@ class Settings:
         return self.get_env('SCHEDULER_ENABLED', 'true').lower() in ('true', '1', 'yes')
 
     @property
+    def scheduler_batch_users_seq(self) -> str:
+        users_seq = self.get_env('SCHEDULER_BATCH_USERS_SEQ')
+        if not users_seq:
+            raise ValueError(f"SCHEDULER_BATCH_USERS_SEQ가 설정되지 않았습니다. ({self.active_profile} 환경)")
+        return users_seq
+
+    @property
     def secret_key(self) -> str:
         secret_key = self.get_env('SECRET_KEY')
         if not secret_key:

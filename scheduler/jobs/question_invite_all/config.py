@@ -3,10 +3,10 @@ from config import settings
 from scheduler.job_schedule import JobSchedule
 
 JOB_SCHEDULE = JobSchedule(
-    job_id="gemini_vote_create",
-    job_name="매일 오후 4시 50분 Gemini 투표 생성",
+    job_id="question_invite_all",
+    job_name="매일 새벽 1시 Batch 질문 전체 사용자 초대",
     timezone=settings.timezone,
-    hour=16,
-    minute=50,
+    hour=1,
+    minute=0,
     second=0,
 )
