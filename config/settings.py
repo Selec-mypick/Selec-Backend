@@ -112,22 +112,6 @@ class Settings:
         return f"https://{self.service_domain}"
 
     @property
-    def app_ios_install_url(self) -> str:
-        return self.get_env('APP_IOS_INSTALL_URL', self.service_base_url)
-
-    @property
-    def app_android_install_url(self) -> str:
-        return self.get_env('APP_ANDROID_INSTALL_URL', self.service_base_url)
-
-    @property
-    def app_deeplink_scheme(self) -> str:
-        return self.get_env('APP_DEEPLINK_SCHEME', 'selec')
-
-    @property
-    def app_android_package_name(self) -> str:
-        return self.get_env('APP_ANDROID_PACKAGE_NAME', 'com.harang.selec')
-
-    @property
     def scheduler_enabled(self) -> bool:
         return self.get_env('SCHEDULER_ENABLED', 'true').lower() in ('true', '1', 'yes')
 
