@@ -49,7 +49,7 @@ async def create_question(request: CreateQuestionRequest, users_seq: str, db: As
 
 async def get_question(question_seq: str, users_seq: str, db: AsyncSession) -> GetQuestionResponse:
     async def get_question_action() -> GetQuestionResponse:
-        question_detail_rows = await QuestionRepository.find_detail_rows_by_question_seq(db, question_seq, users_seq)
+        question_detail_rows = await QuestionRepository.find_details_by_question_seqs(db, [question_seq], users_seq)
         if not question_detail_rows:
             raise BaseAPIException(ErrorCode.QUESTION_NOT_FOUND)
 

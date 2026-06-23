@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 
 class QuestionOptionResponse(BaseModel):
     options_seq: int
-    question_seq: str
     content: str
     percentage: float | None = Field(default=None, description="득표율")
 
@@ -61,7 +60,6 @@ class GetQuestionResponse(BaseModel):
             options=[
                 QuestionOptionResponse(
                     options_seq=option.options_seq,
-                    question_seq=option.question_seq,
                     content=option.content,
                     percentage=(
                         _calculate_percentage(vote_count, total_vote_count)

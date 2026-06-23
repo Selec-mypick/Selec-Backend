@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from pathlib import Path
@@ -18,6 +19,8 @@ logger = logging.getLogger(__name__)
 PROMPT_PATH = Path(__file__).resolve().parent / "prompt.txt"
 SCHEDULER_LOCK_KEY = "scheduler:lock:gemini_vote_create"
 SCHEDULER_LOCK_TTL_SECONDS = 600
+GEMINI_API_MAX_RETRIES = 3
+GEMINI_API_RETRY_DELAYS_SECONDS = (30, 60, 120)
 
 
 class GeminiVoteCreateJob:
@@ -43,11 +46,31 @@ class GeminiVoteCreateJob:
                 raise BaseAPIException(ErrorCode.GEMINI_MODEL_NOT_CONFIGURED)
 
             prompt = self.read_prompt()
-            response = await GeminiClient.generate_content(prompt, self.model)
+            response = await self.generate_content_with_retry(prompt)
             request = self.to_create_question_request(response)
 
             async with AsyncSessionLocal() as db:
                 await create_question(request, users_seq=self.users_seq, db=db)
+
+    async def generate_content_with_retry(self, prompt: str) -> dict:
+        max_attempts = GEMINI_API_MAX_RETRIES + 1
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return await GeminiClient.generate_content(prompt, self.model)
+            except BaseAPIException:
+                if attempt == max_attempts:
+                    raise
+
+                delay_seconds = GEMINI_API_RETRY_DELAYS_SECONDS[attempt - 1]
+                logger.warning(
+                    "Gemini API call failed. retrying. attempt=%s/%s, delay_seconds=%s",
+                    attempt,
+                    max_attempts,
+                    delay_seconds,
+                )
+                await asyncio.sleep(delay_seconds)
+
+        raise BaseAPIException(ErrorCode.GEMINI_API_CALL_FAILED)
 
     def read_prompt(self) -> str:
         if not self.prompt_path.exists():

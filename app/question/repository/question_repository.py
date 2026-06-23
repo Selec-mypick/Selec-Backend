@@ -16,16 +16,6 @@ class QuestionRepository:
         return question
 
     @staticmethod
-    async def find_by_question_seq(db: AsyncSession, question_seq: str) -> Question | None:
-        result = await db.execute(
-            select(Question).where(
-                Question.question_seq == question_seq,
-                Question.active.is_(True),
-            )
-        )
-        return result.scalar_one_or_none()
-
-    @staticmethod
     async def find_by_question_seq_for_update(db: AsyncSession, question_seq: str) -> Question | None:
         result = await db.execute(
             select(Question)
@@ -117,7 +107,7 @@ class QuestionRepository:
                 QuestionInvited.active.is_(True),
                 Question.active.is_(True),
             )
-            .order_by(QuestionInvited.created_at.desc())
+            .order_by(Question.created_at.desc())
             .offset((page - 1) * size)
             .limit(size)
         )
@@ -189,66 +179,6 @@ class QuestionRepository:
             )
             .where(
                 Question.question_seq.in_(question_seqs),
-                Question.active.is_(True),
-            )
-            .order_by(Options.options_seq.asc())
-        )
-
-        return result.all()
-
-    @staticmethod
-    async def find_detail_rows_by_question_seq(
-            db: AsyncSession,
-            question_seq: str,
-            users_seq: str,
-    ):
-        vote_count_subquery = (
-            select(
-                Vote.options_seq.label("options_seq"),
-                func.count(Vote.vote_seq).label("vote_count"),
-            )
-            .where(
-                Vote.question_seq == question_seq,
-                Vote.active.is_(True),
-            )
-            .group_by(Vote.options_seq)
-            .subquery()
-        )
-
-        user_vote_subquery = (
-            select(Vote.options_seq.label("options_seq"))
-            .where(
-                Vote.question_seq == question_seq,
-                Vote.users_seq == users_seq,
-                Vote.active.is_(True),
-            )
-            .subquery()
-        )
-
-        result = await db.execute(
-            select(
-                Question,
-                Options,
-                func.coalesce(vote_count_subquery.c.vote_count, 0),
-                user_vote_subquery.c.options_seq,
-            )
-            .outerjoin(
-                Options,
-                and_(
-                    Options.question_seq == Question.question_seq,
-                    Options.active.is_(True),
-                ),
-            )
-            .outerjoin(
-                vote_count_subquery,
-                vote_count_subquery.c.options_seq == Options.options_seq,
-            )
-            .outerjoin(
-                user_vote_subquery,
-                user_vote_subquery.c.options_seq == Options.options_seq,
-            )
-            .where(
-                Question.question_seq == question_seq,
                 Question.active.is_(True),
             )
             .order_by(Options.options_seq.asc())

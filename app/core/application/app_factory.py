@@ -10,7 +10,6 @@ from config import settings
 from app.core.exceptions import ErrorCode, setup_exception_handlers
 from app.core.middleware import JWTAuthMiddleware
 from app.auth.routers.auth_router import router as auth_router
-from app.deeplink.routers.deeplink_router import router as deeplink_router
 from scheduler import shutdown_scheduler, start_scheduler
 from app.question.routers.question_router import router as question_router
 from app.users.routers.users_router import router as users_router
@@ -49,7 +48,6 @@ def create_app() -> FastAPI:
         allow_paths=(
             "/api/auth/**",
             "/actuator/**",
-            "/deeplink/**",
         ),
     )
 
@@ -68,7 +66,6 @@ def create_app() -> FastAPI:
     app.include_router(users_router)
     app.include_router(question_router)
     app.include_router(vote_router)
-    app.include_router(deeplink_router)
 
     def custom_openapi():
         if app.openapi_schema:
