@@ -55,7 +55,7 @@ class Users(BaseTimeEntity):
             google_id=device_id,
             nick_name=nick_name,
             email=None,
-            name="웹 방문자",
+            name=nick_name,
             profile_image=None,
             active=True,
         )

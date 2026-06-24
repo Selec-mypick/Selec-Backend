@@ -97,6 +97,7 @@ class UsersRepository:
             existing_users.activate_device_profile()
             if existing_users.nick_name is None:
                 existing_users.nick_name = nick_name
+            existing_users.name = existing_users.nick_name
             await db.flush()
             await db.refresh(existing_users)
             return existing_users
