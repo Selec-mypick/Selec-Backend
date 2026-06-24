@@ -12,8 +12,11 @@ from app.users.service.user_service import get_my_info, get_my_questions, logout
 router = APIRouter(prefix="/api/users", tags=["USERS"])
 
 _AUTH_ERRORS = (
+    ErrorCode.AUTH_HEADER_REQUIRED,
+    ErrorCode.AUTH_HEADER_INVALID_FORMAT,
     ErrorCode.ACCESS_TOKEN_EXPIRED,
     ErrorCode.ACCESS_TOKEN_INVALID,
+    ErrorCode.ACCESS_TOKEN_MISSING_USER,
     ErrorCode.ACCESS_TOKEN_NOT_WHITELISTED,
     ErrorCode.ACCESS_TOKEN_WHITELIST_MISMATCH,
     ErrorCode.ACCESS_TOKEN_BLACKLISTED,
@@ -77,7 +80,6 @@ async def get_my_questions_endpoint(
     responses={
         **api_errors(
             *_AUTH_ERRORS,
-            ErrorCode.AUTH_HEADER_INVALID_FORMAT,
             ErrorCode.VALIDATION_ERROR,
             ErrorCode.TOKEN_STORE_FAILED,
         ),

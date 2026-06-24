@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.schema.request.auth_request import GoogleOAuthRequest, IssueTestTokenRequest, RefreshTokenRequest
+from app.auth.schema.request.auth_request import DeviceAuthRequest, GoogleOAuthRequest, IssueTestTokenRequest, \
+    RefreshTokenRequest
 from app.auth.schema.response.auth_response import AuthTokenResponse, CreateTestUserResponse
-from app.auth.service.auth_service import authenticate_google, create_test_user, issue_test_token, refresh_access_token
+from app.auth.service.auth_service import authenticate_device, authenticate_google, create_test_user, issue_test_token, \
+    refresh_access_token
 from app.base.response import BaseResponse, api_errors
 from app.core.database import get_db
 from app.core.exceptions import ErrorCode
@@ -20,6 +22,7 @@ router = APIRouter(prefix="/api/auth", tags=["AUTH"])
             ErrorCode.VALIDATION_ERROR,
             ErrorCode.TEST_USER_CREATE_CONFLICT,
             ErrorCode.TOKEN_STORE_FAILED,
+            ErrorCode.TRANSACTION_FAILED,
         ),
     },
 )
@@ -58,6 +61,30 @@ async def issue_test_token_endpoint(
 
 
 @router.post(
+    "/device",
+    response_model=BaseResponse[AuthTokenResponse],
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        **api_errors(
+            ErrorCode.VALIDATION_ERROR,
+            ErrorCode.DEVICE_USER_CREATE_CONFLICT,
+            ErrorCode.TOKEN_STORE_FAILED,
+            ErrorCode.TRANSACTION_FAILED,
+        ),
+    },
+)
+async def device_auth_endpoint(
+        request: DeviceAuthRequest,
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    device_id로 익명 사용자를 생성/조회하고 토큰을 발급합니다.
+    """
+    result = await authenticate_device(request, db)
+    return BaseResponse.of_success(status.HTTP_201_CREATED, result)
+
+
+@router.post(
     "/oauth/google",
     response_model=BaseResponse[AuthTokenResponse],
     status_code=status.HTTP_201_CREATED,
@@ -69,6 +96,7 @@ async def issue_test_token_endpoint(
             ErrorCode.GOOGLE_USER_NOT_FOUND,
             ErrorCode.GOOGLE_REGISTER_CONFLICT,
             ErrorCode.TOKEN_STORE_FAILED,
+            ErrorCode.TRANSACTION_FAILED,
         ),
     },
 )

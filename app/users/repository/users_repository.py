@@ -79,3 +79,33 @@ class UsersRepository:
         await db.flush()
         await db.refresh(users)
         return users
+
+    @staticmethod
+    async def upsert_by_device(
+            db: AsyncSession,
+            device_id: str,
+            nick_name: str,
+    ) -> Users:
+        result = await db.execute(
+            select(Users).where(
+                Users.google_id == device_id
+            )
+        )
+        existing_users = result.scalar_one_or_none()
+
+        if existing_users is not None:
+            existing_users.activate_device_profile()
+            if existing_users.nick_name is None:
+                existing_users.nick_name = nick_name
+            await db.flush()
+            await db.refresh(existing_users)
+            return existing_users
+
+        users = Users.create_from_device(
+            device_id=device_id,
+            nick_name=nick_name,
+        )
+        db.add(users)
+        await db.flush()
+        await db.refresh(users)
+        return users

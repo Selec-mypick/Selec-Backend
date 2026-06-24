@@ -14,8 +14,11 @@ from app.vote.service.vote_service import create_vote, delete_vote
 router = APIRouter(prefix="/api/vote", tags=["VOTE"])
 
 _AUTH_ERRORS = (
+    ErrorCode.AUTH_HEADER_REQUIRED,
+    ErrorCode.AUTH_HEADER_INVALID_FORMAT,
     ErrorCode.ACCESS_TOKEN_EXPIRED,
     ErrorCode.ACCESS_TOKEN_INVALID,
+    ErrorCode.ACCESS_TOKEN_MISSING_USER,
     ErrorCode.ACCESS_TOKEN_NOT_WHITELISTED,
     ErrorCode.ACCESS_TOKEN_WHITELIST_MISMATCH,
     ErrorCode.ACCESS_TOKEN_BLACKLISTED,
@@ -33,7 +36,8 @@ _AUTH_ERRORS = (
             ErrorCode.VALIDATION_ERROR,
             ErrorCode.OPTION_NOT_IN_QUESTION,
             ErrorCode.QUESTION_NOT_FOUND,
-            ErrorCode.INTERNAL_SERVER_ERROR,
+            ErrorCode.RESOURCE_CONFLICT,
+            ErrorCode.TRANSACTION_FAILED,
         ),
     },
 )
@@ -59,7 +63,7 @@ async def create_vote_endpoint(
             *_AUTH_ERRORS,
             ErrorCode.VALIDATION_ERROR,
             ErrorCode.VOTE_NOT_FOUND,
-            ErrorCode.INTERNAL_SERVER_ERROR,
+            ErrorCode.TRANSACTION_FAILED,
         ),
     },
 )

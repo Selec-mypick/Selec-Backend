@@ -44,3 +44,21 @@ class Users(BaseTimeEntity):
         self.name = name
         self.profile_image = profile_image
         self.active = True
+
+    @classmethod
+    def create_from_device(
+            cls,
+            device_id: str,
+            nick_name: str,
+    ) -> "Users":
+        return cls(
+            google_id=device_id,
+            nick_name=nick_name,
+            email=None,
+            name="웹 방문자",
+            profile_image=None,
+            active=True,
+        )
+
+    def activate_device_profile(self) -> None:
+        self.active = True

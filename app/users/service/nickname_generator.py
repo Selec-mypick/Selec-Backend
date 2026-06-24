@@ -22,18 +22,14 @@ NOUNS = (
 )
 
 
-def generate_nickname() -> str:
-    adjective = ADJECTIVES[secrets.randbelow(len(ADJECTIVES))]
-    noun = NOUNS[secrets.randbelow(len(NOUNS))]
-    number = secrets.randbelow(1000)
-    return f"{adjective}{noun}{number:03d}"
-
-
 async def generate_unique_nickname(db: AsyncSession, fallback_nick_name: str) -> str:
     start_time = monotonic()
 
     while monotonic() - start_time <= NICKNAME_GENERATION_TIMEOUT_SECONDS:
-        nick_name = generate_nickname()
+        adjective = ADJECTIVES[secrets.randbelow(len(ADJECTIVES))]
+        noun = NOUNS[secrets.randbelow(len(NOUNS))]
+        number = secrets.randbelow(1000)
+        nick_name = f"{adjective}{noun}{number:03d}"
         if not await UsersRepository.exists_by_nick_name(db, nick_name):
             return nick_name
 

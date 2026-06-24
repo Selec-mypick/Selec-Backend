@@ -1,9 +1,9 @@
+from uuid import uuid4
+
 import aiohttp
 from jose import jwt, JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
-from uuid import uuid4
 
-from config import settings
 from app.auth.domain.token_domain import (
     create_access_token,
     create_refresh_token,
@@ -11,13 +11,15 @@ from app.auth.domain.token_domain import (
     is_token_blacklisted,
     store_auth_token,
 )
-from app.auth.schema.request.auth_request import GoogleOAuthRequest, IssueTestTokenRequest, RefreshTokenRequest
+from app.auth.schema.request.auth_request import DeviceAuthRequest, GoogleOAuthRequest, IssueTestTokenRequest, \
+    RefreshTokenRequest
 from app.auth.schema.response.auth_response import AuthTokenResponse, CreateTestUserResponse
 from app.core.database.transaction import run_in_transaction
 from app.core.exceptions import BaseAPIException, ErrorCode
-from app.users.repository.users_repository import UsersRepository
 from app.users.models.users import Users
+from app.users.repository.users_repository import UsersRepository
 from app.users.service.nickname_generator import generate_unique_nickname
+from config import settings
 
 GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 
@@ -59,6 +61,49 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
         upsert_google_user,
         "Google OAuth 로그인 처리 중 오류가 발생했습니다",
         integrity_exception=BaseAPIException(ErrorCode.GOOGLE_REGISTER_CONFLICT),
+    )
+
+    access_token, expires_in = create_access_token(users_seq)
+    refresh_token = create_refresh_token(users_seq)
+
+    try:
+        previous_token = await get_white_token(users_seq)
+        if previous_token is not None:
+            await store_auth_token(store_type="black", token=previous_token)
+        await store_auth_token(store_type="white", token=access_token, users_seq=users_seq)
+    except Exception as e:
+        raise BaseAPIException(ErrorCode.TOKEN_STORE_FAILED, message=f"{ErrorCode.TOKEN_STORE_FAILED.message}: {str(e)}")
+
+    return AuthTokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=expires_in,
+    )
+
+
+async def authenticate_device(request: DeviceAuthRequest, db: AsyncSession) -> AuthTokenResponse:
+    device_id = request.device_id.strip()
+    fallback_nick_name = f"익명{device_id.replace('-', '')[:12]}"
+
+    async def upsert_device_user() -> str:
+        existing_users = await UsersRepository.find_by_google_id(db, device_id)
+        nick_name = (
+            existing_users.nick_name
+            if existing_users is not None and existing_users.nick_name is not None
+            else await generate_unique_nickname(db, fallback_nick_name)
+        )
+        users = await UsersRepository.upsert_by_device(
+            db=db,
+            device_id=device_id,
+            nick_name=nick_name,
+        )
+        return users.users_seq
+
+    users_seq = await run_in_transaction(
+        db,
+        upsert_device_user,
+        "익명 사용자 로그인 처리 중 오류가 발생했습니다",
+        integrity_exception=BaseAPIException(ErrorCode.DEVICE_USER_CREATE_CONFLICT),
     )
 
     access_token, expires_in = create_access_token(users_seq)

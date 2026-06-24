@@ -24,8 +24,11 @@ from app.question.service.question_service import (
 router = APIRouter(prefix="/api/question", tags=["QUESTION"])
 
 _AUTH_ERRORS = (
+    ErrorCode.AUTH_HEADER_REQUIRED,
+    ErrorCode.AUTH_HEADER_INVALID_FORMAT,
     ErrorCode.ACCESS_TOKEN_EXPIRED,
     ErrorCode.ACCESS_TOKEN_INVALID,
+    ErrorCode.ACCESS_TOKEN_MISSING_USER,
     ErrorCode.ACCESS_TOKEN_NOT_WHITELISTED,
     ErrorCode.ACCESS_TOKEN_WHITELIST_MISMATCH,
     ErrorCode.ACCESS_TOKEN_BLACKLISTED,
@@ -41,7 +44,8 @@ _AUTH_ERRORS = (
         **api_errors(
             *_AUTH_ERRORS,
             ErrorCode.VALIDATION_ERROR,
-            ErrorCode.INTERNAL_SERVER_ERROR,
+            ErrorCode.RESOURCE_CONFLICT,
+            ErrorCode.TRANSACTION_FAILED,
         ),
     },
 )
@@ -89,7 +93,8 @@ async def get_invited_questions_endpoint(
             *_AUTH_ERRORS,
             ErrorCode.VALIDATION_ERROR,
             ErrorCode.QUESTION_NOT_FOUND,
-            ErrorCode.INTERNAL_SERVER_ERROR,
+            ErrorCode.RESOURCE_CONFLICT,
+            ErrorCode.TRANSACTION_FAILED,
         ),
     },
 )
@@ -120,7 +125,8 @@ async def get_question_endpoint(
             ErrorCode.QUESTION_UPDATE_FORBIDDEN,
             ErrorCode.QUESTION_NOT_FOUND,
             ErrorCode.QUESTION_STALE,
-            ErrorCode.INTERNAL_SERVER_ERROR,
+            ErrorCode.RESOURCE_CONFLICT,
+            ErrorCode.TRANSACTION_FAILED,
         ),
     },
 )
@@ -149,7 +155,7 @@ async def update_question_endpoint(
             ErrorCode.QUESTION_DELETE_FORBIDDEN,
             ErrorCode.QUESTION_NOT_FOUND,
             ErrorCode.QUESTION_STALE,
-            ErrorCode.INTERNAL_SERVER_ERROR,
+            ErrorCode.TRANSACTION_FAILED,
         ),
     },
 )
