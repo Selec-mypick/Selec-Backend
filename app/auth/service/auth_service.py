@@ -83,7 +83,7 @@ async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> 
 
 async def authenticate_device(request: DeviceAuthRequest, db: AsyncSession) -> AuthTokenResponse:
     device_id = request.device_id.strip()
-    fallback_nick_name = f"익명{device_id.replace('-', '')[:12]}"
+    fallback_nick_name = f"선택소환사#{device_id.replace('-', '').upper()[:6]}"
 
     async def upsert_device_user() -> str:
         existing_users = await UsersRepository.find_by_google_id(db, device_id)
