@@ -22,7 +22,6 @@ from app.users.service.nickname_generator import generate_unique_nickname
 from config import settings
 
 GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
-ADMIN_USERS_SEQ = "40dc691b-e4a7-4fe2-9363-f43a02faeb89"
 
 
 async def authenticate_google(request: GoogleOAuthRequest, db: AsyncSession) -> AuthTokenResponse:
@@ -170,31 +169,6 @@ async def create_test_user(db: AsyncSession) -> CreateTestUserResponse:
 
 async def issue_test_token(request: IssueTestTokenRequest, db: AsyncSession) -> AuthTokenResponse:
     users = await UsersRepository.find_by_users_seq(db, request.users_seq)
-    if users is None:
-        raise BaseAPIException(ErrorCode.AUTH_USER_NOT_FOUND)
-    if not users.active:
-        raise BaseAPIException(ErrorCode.AUTH_USER_INACTIVE)
-
-    access_token, expires_in = create_access_token(users.users_seq)
-    refresh_token = create_refresh_token(users.users_seq)
-
-    try:
-        previous_token = await get_white_token(users.users_seq)
-        if previous_token is not None:
-            await store_auth_token(store_type="black", token=previous_token)
-        await store_auth_token(store_type="white", token=access_token, users_seq=users.users_seq)
-    except Exception as e:
-        raise BaseAPIException(ErrorCode.TOKEN_STORE_FAILED, message=f"{ErrorCode.TOKEN_STORE_FAILED.message}: {str(e)}")
-
-    return AuthTokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        expires_in=expires_in,
-    )
-
-
-async def issue_admin_token(db: AsyncSession) -> AuthTokenResponse:
-    users = await UsersRepository.find_by_users_seq(db, ADMIN_USERS_SEQ)
     if users is None:
         raise BaseAPIException(ErrorCode.AUTH_USER_NOT_FOUND)
     if not users.active:

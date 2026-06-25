@@ -8,7 +8,6 @@ from app.auth.service.auth_service import (
     authenticate_device,
     authenticate_google,
     create_test_user,
-    issue_admin_token,
     issue_test_token,
     refresh_access_token,
 )
@@ -63,28 +62,6 @@ async def issue_test_token_endpoint(
     기존 테스트 유저의 토큰을 재발급합니다.
     """
     result = await issue_test_token(request, db)
-    return BaseResponse.of_success(status.HTTP_201_CREATED, result)
-
-
-@router.post(
-    "/admin/token",
-    response_model=BaseResponse[AuthTokenResponse],
-    status_code=status.HTTP_201_CREATED,
-    responses={
-        **api_errors(
-            ErrorCode.AUTH_USER_NOT_FOUND,
-            ErrorCode.AUTH_USER_INACTIVE,
-            ErrorCode.TOKEN_STORE_FAILED,
-        ),
-    },
-)
-async def issue_admin_token_endpoint(
-        db: AsyncSession = Depends(get_db),
-):
-    """
-    고정 관리자 계정의 토큰을 발급합니다.
-    """
-    result = await issue_admin_token(db)
     return BaseResponse.of_success(status.HTTP_201_CREATED, result)
 
 
